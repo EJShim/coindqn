@@ -79,13 +79,12 @@ class ReplayBuffer:
         return self.size
 
 
-def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optimizer = None, batch_size=64, learning_rate=1e-3, gamma=0.99):
+def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optimizer = None, gamma=0.99):
 
     assert device is not None, "None Device input: device should be selected."
 
     # Get batch from replay buffer
     samples = replay_buffer.sample()
-
     
     states = torch.FloatTensor(samples["obs"]).to(device)
     actions = torch.LongTensor(samples["acts"].reshape(-1,1)).to(device)
@@ -101,7 +100,7 @@ def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optim
 
     # Multiply Importance Sampling weights to loss        
     loss = F.smooth_l1_loss(q_a, targets)
-    
+
     # Update Network
     optimizer.zero_grad()
     loss.backward()
