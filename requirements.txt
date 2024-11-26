@@ -1,0 +1,5 @@
+numpy==1.23.1
+gym
+gym[classic_control]
+torch
+opencv-python
