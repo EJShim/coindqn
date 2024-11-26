@@ -20,6 +20,8 @@ class Q_net(nn.Module):
     def __init__(self, state_space, action_space):
         super(Q_net, self).__init__()
 
+        self.action_space = action_space
+
 
         self.Linear1 = nn.Linear(state_space, 64)
         # self.lstm    = nn.LSTMCell(64,64)
@@ -33,7 +35,7 @@ class Q_net(nn.Module):
 
     def sample_action(self, obs, epsilon):
         if random.random() < epsilon:
-            return random.randint(0,1)
+            return random.randint(0, self.action_space-1)
         else:
             return self.forward(obs).argmax().item()
 
