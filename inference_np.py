@@ -24,8 +24,6 @@ class NumpyNet:
 
 
     def __call__(self, x):
-        print(x)
-        exit()
 
         y1 = self.linear1w @ x + self.linear1b
         y1 = np.maximum(0, y1)
