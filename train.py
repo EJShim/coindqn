@@ -3,17 +3,67 @@ import socket
 import json
 import torch
 import subprocess
-from train_test import Q_net, ReplayBuffer, train
+
+import win32com.client
+from train_test import ReplayBuffer, train
+import win32com
+import time
+import random
+from pathlib import Path
+
+wsh = win32com.client.Dispatch("WScript.Shell")
+
+def save_model(model, path='default.pth'):
+
+    save_path = Path(path)
+    if not save_path.parent.exists():
+        save_path.parent.mkdir(exist_ok=True)
+
+    state_dict = model.state_dict()
+    torch.save(state_dict, path)
+
+    # Save Json Also
+    json_dict = {}
+    for key, value in state_dict.items():
+        json_dict[key] = value.detach().cpu().numpy().tolist()
+
+    json_file = path[:-4] + ".json"
+    with open(json_file, "w") as f:
+        json.dump(json_dict, f)
+
+class Q_net(torch.nn.Module):
+    def __init__(self, state_space, action_space):
+        super(Q_net, self).__init__()
+
+        self.action_space = action_space
+
+
+        self.Linear1 = torch.nn.Linear(state_space, 64)        
+        self.Linear2 = torch.nn.Linear(64, 128)
+        self.Linear3 = torch.nn.Linear(128, 64)
+        self.Linear4 = torch.nn.Linear(64, action_space)
+
+    def forward(self, x):
+        x = torch.nn.functional.relu(self.Linear1(x))
+        x = torch.nn.functional.relu(self.Linear2(x))
+        x = torch.nn.functional.relu(self.Linear3(x))
+        return self.Linear4(x)
+
+    def sample_action(self, obs, epsilon):
+        if random.random() < epsilon:
+            return random.randint(0, self.action_space-1)
+        else:
+            return self.forward(obs).argmax().item()
+
 
 device = torch.device("cpu")
 class SocketAgent:
     def __init__(self, process = None):
-        self.process = process
         
         # Training Parameters : 
-        self.eps_start = 0.9
+        self.eps_start = 0.1
         self.eps_end = 0.001
-        self.eps_decay = 0.5
+        self.eps_decay = 0.995
 
 
         self.epsilon = self.eps_start
@@ -47,30 +97,29 @@ class SocketAgent:
         self.target_update_period = 4
         self.tau = 1*1e-2
 
+        self.episode = 0
+
+
+        self.process = process
+
+        seed = str(random.randint(1,4))
+        time.sleep(5)
+        wsh.AppActivate(self.process.pid)
+        wsh.SendKeys(seed)
+        print(f"Send Key {seed}")
+
 
     def reset(self):
+
+
+
         # For Reward Calculation
         self.t = 0
         self.prev_state = None
         self.action = None
         self.total_rewards = 0
 
-        self.epsilon = max(self.eps_end, self.epsilon * self.eps_decay) #Linear annealing1q
-
-
-
-
-    def calculate_reward(self, state, position):
-        if self.prev_state == None : return torch.tensor(0, dtype=torch.float32)
-
-        if position == state[-1]:
-            # print("not moved")
-            return torch.tensor(0, dtype=torch.float32)
-
-        reward = self.prev_state[position] - state[position]
-
-
-        return reward
+        self.epsilon = max(self.eps_end, self.epsilon * self.eps_decay) 
     
 
     def run(self):        
@@ -80,18 +129,23 @@ class SocketAgent:
             msg = client_socket.recv(self.SIZE)  # 클라이언트가 보낸 메시지 
             data = json.loads(msg.decode())
             if data['type'] =='start':
-                print("Start Process", dir(self.process))
+                print("Start Process")
+
+                time.sleep(3)
+                wsh.AppActivate(self.process.pid)
+                wsh.SendKeys("~")
+                
+                print("Enter Key Dnoe")
 
             elif data['type'] == 'init':
-                col = data['col']
-                row = data['row']
+                sight = data['sight']
 
                 self.reset()
                 if self.q_model == None:
-                    self.q_model = Q_net(state_space=col*row*2, action_space=4)
-                    self.q_target = Q_net(state_space=col*row*2,  action_space=4)
+                    self.q_model = Q_net(state_space=sight*sight, action_space=4)
+                    self.q_target = Q_net(state_space=sight*sight,  action_space=4)
                     self.q_target.load_state_dict(self.q_model.state_dict())
-                    self.replay_buffer = ReplayBuffer(col*row*2,
+                    self.replay_buffer = ReplayBuffer(sight*sight,
                                                         size=100000,
                                                         batch_size=self.batch_size )
                     
@@ -99,11 +153,19 @@ class SocketAgent:
 
 
             elif data['type'] == 'state':
-                state = torch.tensor( data['map'] , dtype=torch.float32)
-                position = torch.tensor( [data['position']]*col*row )             
-                state_tensor  = torch.cat([state, position])
 
-                reward = self.calculate_reward(state_tensor, data['position'] )
+                state = torch.tensor(data['state'])
+                # print(state.shape)
+                state = torch.flatten(state).to(torch.float32)
+                reward = data["reward"]
+
+
+                # print(asdf)
+                # exit()
+                # state = torch.tensor( data['map'] , dtype=torch.float32)
+                # position = torch.tensor( [data['position']]*col*row )             
+                # state_tensor  = torch.cat([state, position])
+                # reward = self.calculate_reward(state_tensor, data['position'] )
                 
                 done_mask = 0.0 if 1 else 1.0
 
@@ -111,7 +173,7 @@ class SocketAgent:
                     self.replay_buffer.put(self.prev_state, 
                                             self.action, 
                                             reward/100.0,
-                                            state_tensor,
+                                            state,
                                             done_mask )
                     
                     if len(self.replay_buffer) >= self.batch_size:
@@ -124,27 +186,42 @@ class SocketAgent:
                             for target_param, local_param in zip(self.q_target.parameters(), self.q_model.parameters()): #<- soft update
                                     target_param.data.copy_(self.tau*local_param.data + (1.0 - self.tau)*target_param.data)
                 
-                self.prev_state = state_tensor
+                self.prev_state = state
 
-                
                 # Run Network
-                self.action = self.q_model.sample_action( state_tensor, self.epsilon )
-
+                self.action = self.q_model.sample_action( state, self.epsilon )
                 self.total_rewards += reward
-                # print(self.t, self.action, self.total_rewards)
 
                 self.t += 1
 
                 client_socket.send( str(self.action).encode() )
 
-                if data["done"]:
-                    print("Done", self.epsilon)
+                if data["done"]:     
+                    print("Done", self.epsilon, self.total_rewards)
+                    env_name = "V1"
+                    if self.episode % 20 == 0:
+                        save_path = f"output/{env_name}/{self.episode}.pth"
+                        save_model(self.q_model, save_path )
+
+                    self.episode += 1
+                    self.reset()
+                    
+        
+
 
                     subprocess.call(['taskkill', '/F', '/T', '/PID',  str(self.process.pid)])
 
 
                     cwd = os.path.realpath("play_windows_20x12")
                     self.process = subprocess.Popen("CoinChallenger.exe ", cwd=cwd, shell=True, stdin=subprocess.PIPE)
+                    time.sleep(5)
+                    seed = str(random.randint(1,4))
+                    wsh.AppActivate(self.process.pid)
+                    wsh.SendKeys(seed)
+                    print(f"Send Key {seed}")
+            else:
+                print(data)
+                if data['type'] == "error" : break
 
 
 
