@@ -194,6 +194,9 @@ class SocketAgent:
                 done_mask = 0.0 if 1 else 1.0
 
                 if self.prev_state is not None:
+                    if reward == 0:
+                        reward = state.sum() - self.prev_state.sum()
+
                     self.replay_buffer.put(self.prev_state, 
                                             self.action, 
                                             reward/1000.0,
@@ -222,7 +225,7 @@ class SocketAgent:
 
                 if data["done"]:     
                     print("Done", self.epsilon, self.total_rewards)
-                    env_name = "V4"
+                    env_name = "V5"
                     if self.episode % 20 == 0:
                         save_path = f"output/{env_name}/{self.episode}.pth"
                         save_model(self.q_model, save_path )
