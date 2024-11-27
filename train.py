@@ -7,6 +7,7 @@ import subprocess
 import win32com.client
 from train_test import ReplayBuffer, train
 import win32com
+import math
 import time
 import random
 from pathlib import Path
@@ -36,25 +37,41 @@ class Q_net(torch.nn.Module):
     def __init__(self, state_space, action_space):
         super(Q_net, self).__init__()
 
-        self.action_space = action_space
+        self.sight = int(math.sqrt(state_space))
+        self.center = (self.sight - 1) / 2
+        self.mask_slice_index = [ int( (self.sight) * self.center + (self.center-1)), 
+                                 int((self.sight) * (self.center-1) + self.center),
+                                 int((self.sight) * self.center + (self.center+1)), 
+                                 int((self.sight) * (self.center+1) + self.center) ]
 
+        self.action_space = action_space
 
         self.Linear1 = torch.nn.Linear(state_space, 64)        
         self.Linear2 = torch.nn.Linear(64, 128)
         self.Linear3 = torch.nn.Linear(128, 64)
         self.Linear4 = torch.nn.Linear(64, action_space)
 
-    def forward(self, x):
+    def forward(self, x):        
+
         x = torch.nn.functional.relu(self.Linear1(x))
         x = torch.nn.functional.relu(self.Linear2(x))
         x = torch.nn.functional.relu(self.Linear3(x))
-        return self.Linear4(x)
+
+        y = self.Linear4(x)
+        return y    
 
     def sample_action(self, obs, epsilon):
         if random.random() < epsilon:
             return random.randint(0, self.action_space-1)
         else:
-            return self.forward(obs).argmax().item()
+            # Get Mask
+            # mask = obs[self.mask_slice_index] + 1
+            # mask = (mask > 0.0).float() * 1
+            y = self.forward(obs)
+            # y = torch.nn.functional.softmax(y)
+            # y = y * mask
+
+            return y.argmax().item()
 
 
 device = torch.device("cpu")
@@ -138,7 +155,7 @@ class SocketAgent:
                 wsh.AppActivate(self.process.pid)
                 wsh.SendKeys("~")
                 
-                print("Enter Key Dnoe")
+                print("Enter Key")
 
             elif data['type'] == 'init':
                 sight = data['sight']
@@ -179,7 +196,7 @@ class SocketAgent:
                 if self.prev_state is not None:
                     self.replay_buffer.put(self.prev_state, 
                                             self.action, 
-                                            reward/100.0,
+                                            reward/1000.0,
                                             state,
                                             done_mask )
                     
@@ -205,7 +222,7 @@ class SocketAgent:
 
                 if data["done"]:     
                     print("Done", self.epsilon, self.total_rewards)
-                    env_name = "V2"
+                    env_name = "V4"
                     if self.episode % 20 == 0:
                         save_path = f"output/{env_name}/{self.episode}.pth"
                         save_model(self.q_model, save_path )
