@@ -191,15 +191,22 @@ class SocketAgent:
                 # state_tensor  = torch.cat([state, position])
                 # reward = self.calculate_reward(state_tensor, data['position'] )
                 
-                done_mask = 0.0 if 1 else 1.0
 
                 if self.prev_state is not None:
+
+                    if data["done"]:
+                        done_mask = 0.0 
+                        reward = self.total_rewards
+                    else:
+                        1.0
+
                     if reward == 0:
-                        reward = state.sum() - self.prev_state.sum()
+                        reward = (state.sum() - self.prev_state.sum()) / 10.0
+
 
                     self.replay_buffer.put(self.prev_state, 
                                             self.action, 
-                                            reward/1000.0,
+                                            reward/100.0,
                                             state,
                                             done_mask )
                     
