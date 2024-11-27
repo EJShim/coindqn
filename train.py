@@ -10,6 +10,7 @@ import win32com
 import time
 import random
 from pathlib import Path
+import argparse
 
 wsh = win32com.client.Dispatch("WScript.Shell")
 
@@ -58,12 +59,14 @@ class Q_net(torch.nn.Module):
 
 device = torch.device("cpu")
 class SocketAgent:
-    def __init__(self, process = None):
+    def __init__(self, process = None, resume=None):
         
         # Training Parameters : 
         self.eps_start = 0.1
         self.eps_end = 0.001
         self.eps_decay = 0.995
+
+        self.resume = resume
 
 
         self.epsilon = self.eps_start
@@ -143,6 +146,10 @@ class SocketAgent:
                 self.reset()
                 if self.q_model == None:
                     self.q_model = Q_net(state_space=sight*sight, action_space=4)
+                    if self.resume is not None:
+                        print("Load model : ", self.resume)
+                        self.q_model.load_state_dict(torch.load(self.resume))
+
                     self.q_target = Q_net(state_space=sight*sight,  action_space=4)
                     self.q_target.load_state_dict(self.q_model.state_dict())
                     self.replay_buffer = ReplayBuffer(sight*sight,
@@ -198,7 +205,7 @@ class SocketAgent:
 
                 if data["done"]:     
                     print("Done", self.epsilon, self.total_rewards)
-                    env_name = "V1"
+                    env_name = "V2"
                     if self.episode % 20 == 0:
                         save_path = f"output/{env_name}/{self.episode}.pth"
                         save_model(self.q_model, save_path )
@@ -229,12 +236,15 @@ class SocketAgent:
 
                 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resume", type=Path)
+    args = parser.parse_args()
 
     cwd = os.path.realpath("play_windows_20x12")
     p = subprocess.Popen("CoinChallenger.exe ", cwd=cwd, shell=True, stdin=subprocess.PIPE)
     
     
-    agent = SocketAgent(p)
+    agent = SocketAgent(p, args.resume)
     agent.run()
 
 
