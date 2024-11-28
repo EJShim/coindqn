@@ -30,6 +30,7 @@ class CoinEnv:
         self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
         self.space[tuple(self.position)] = 0
+        self.score = 0
 
         return self.get_state(), self.convert_index(self.position)
 
@@ -39,7 +40,8 @@ class CoinEnv:
 
     def step(self, action):
 
-
+        done = False
+        reward = 0
         pos = self.position
         if action == 0:
             pos = [pos[0]-1, pos[1]]            
@@ -51,16 +53,18 @@ class CoinEnv:
             pos = [pos[0], pos[1]-1]
 
         # Check Valid Position
-        if self.invalid_position(pos):
+        if self.invalid_position(pos) :
             pos = self.position
+            done = True
 
         self.position = pos
 
         # Update MAp and Score
-        self.score += self.space[ tuple(self.position) ]
+        reward = self.space[ tuple(self.position) ]
+        self.score += reward
         self.space[ tuple(self.position) ] = 0
 
-        return self.get_state(), self.convert_index(self.position)
+        return self.get_state(), reward, done
  
 
 
