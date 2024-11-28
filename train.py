@@ -9,8 +9,7 @@ from pathlib import Path
 
 from env.player import Player
 from env.render import render
-from utils import ReplayBuffer, train
-from preprocess import preprocess_large_position_12_20
+from utils import ReplayBuffer, train, save_model
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
@@ -51,6 +50,10 @@ class Q_net(torch.nn.Module):
 
 
 if __name__ == "__main__":
+
+    torch.random.manual_seed(0)
+
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--render", action="store_true")
     args = parser.parse_args()
@@ -80,7 +83,7 @@ if __name__ == "__main__":
     buffer_len = int(100000)
     min_buffer_len = batch_size
     episodes = 1000
-    print_per_iter = 20
+    print_per_iter = 100
     target_update_period = 4
     eps_start = 0.9
     eps_end = 0.001
@@ -174,5 +177,9 @@ if __name__ == "__main__":
         epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing
 
         # TODO : Save
+        
+        if i % print_per_iter == 0 and i!=0 or i == episodes-1:
+            save_path = output_dir.joinpath(f"eps_{i}.pth")
+            save_model(Q, save_path)
 
             

@@ -48,7 +48,9 @@ class CoinEnv:
     def step(self, action):
 
         done = False
-        reward = 0
+        reward = 0 # reward for training
+        score = 0 # just coin score
+
         pos = self.position
         if action == 0:
             pos = [pos[0]-1, pos[1]]            
@@ -65,14 +67,14 @@ class CoinEnv:
             done = True
         else:        
             self.position = pos
-            reward += self.space[ tuple(self.position) ] # coin reward      
+            score += self.space[ tuple(self.position) ] # coin reward      
             self.space[ tuple(self.position) ] = 0
-
+            reward += score
             # Add Exploration
             # reward += self.explor_map[ tuple(self.position) ] # exp reward     
             # self.explor_map[ tuple(self.position) ] = -10
         
-        self.score += reward
+        self.score += score
 
         return self.get_state(), reward, done, self.convert_index(self.position)
  

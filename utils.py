@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import json
+from pathlib import Path
 from typing import Dict
 
 def make_2d_input_map(input_map, row, column):
@@ -125,3 +127,18 @@ def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optim
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+
+
+def save_model(model, save_path):
+
+    state_dict = model.state_dict()
+    torch.save(state_dict, save_path)
+
+    # Save Json Also
+    json_dict = {}
+    for key, value in state_dict.items():
+        json_dict[key] = value.detach().cpu().numpy().tolist()
+
+    json_file = save_path.with_suffix(".json")
+    with open(json_file, "w") as f:
+        json.dump(json_dict, f)
