@@ -25,12 +25,19 @@ class CoinEnv:
         self.percentage = np.array([ 32, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
         self.percentage /= self.percentage.sum()  # sum 1
 
+        self.explor_map = None
+        self.explor_reward = 100
+
 
     def reset(self, seed=0):
         self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
         self.space[tuple(self.position)] = 0
         self.score = 0
+
+        # for exploration reward
+        self.explor_map = np.ones((self.row, self.column))
+        self.explor_reward = 100
 
         return self.get_state(), self.convert_index(self.position)
 
@@ -53,18 +60,21 @@ class CoinEnv:
             pos = [pos[0], pos[1]-1]
 
         # Check Valid Position
-        if self.invalid_position(pos) :
-            pos = self.position
+        if self.invalid_position(pos) :            
+            reward = -100
             done = True
+        else:        
+            self.position = pos
+            reward += self.space[ tuple(self.position) ] # coin reward      
+            self.space[ tuple(self.position) ] = 0
 
-        self.position = pos
-
-        # Update MAp and Score
-        reward = self.space[ tuple(self.position) ]
+            # Add Exploration
+            # reward += self.explor_map[ tuple(self.position) ] # exp reward     
+            # self.explor_map[ tuple(self.position) ] = -10
+        
         self.score += reward
-        self.space[ tuple(self.position) ] = 0
 
-        return self.get_state(), reward, done
+        return self.get_state(), reward, done, self.convert_index(self.position)
  
 
 

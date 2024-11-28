@@ -57,4 +57,7 @@ class Player:
     def preprocess(self, state, index):
         position = self.index_to_position(index) # This is correct
         map2d = self.make_2d_input_map(state)
-        return self.sample_pad_2d_input_map(map2d, position)
+        sample_map = self.sample_pad_2d_input_map(map2d, position)
+        player_view = [y for x in sample_map for y in x]
+
+        return player_view
