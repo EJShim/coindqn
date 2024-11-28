@@ -82,7 +82,7 @@ if __name__ == "__main__":
     learning_rate = 1e-3
     buffer_len = int(100000)
     min_buffer_len = batch_size
-    episodes = 1000
+    episodes = 1500
     print_per_iter = 100
     target_update_period = 4
     eps_start = 0.9
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     Q_target = Q_net(state_space=state_space,  action_space=4).to(device)
     Q_target.load_state_dict(Q.state_dict())
     optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900], gamma=0.3)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900, 1000], gamma=0.3)
 
     # Create Replay buffer
     replay_buffer = ReplayBuffer(state_space, size=buffer_len, batch_size=batch_size)
