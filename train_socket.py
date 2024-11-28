@@ -5,7 +5,7 @@ import torch
 import subprocess
 
 import win32com.client
-from train_test import ReplayBuffer, train
+from cartpole_test.train_test import ReplayBuffer, train
 import win32com
 import math
 import time

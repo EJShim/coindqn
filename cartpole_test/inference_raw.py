@@ -19,29 +19,23 @@ def linear_layer(mat1, mat2, bias, relu=False):
 def argmax(x):
     return max(range(len(x)), key=lambda i: x[i])
 
-class RawNet:
+class NeuralNetwork:
     def __init__(self, ckpt):        
 
-        self.linear1w = ckpt['Linear1.weight']
-        self.linear1b = ckpt['Linear1.bias']
-
-        self.linear2w = ckpt['Linear2.weight']
-        self.linear2b = ckpt['Linear2.bias']
-
-        self.linear3w = ckpt['Linear3.weight']
-        self.linear3b = ckpt['Linear3.bias']
+        self.ckpt = ckpt
+        self.num_layers = len(self.ckpt.keys()) // 2
 
 
     def __call__(self, x):
         
-        y1 = linear_layer(self.linear1w, x, self.linear1b, relu=True)        
-        y2 = linear_layer(self.linear2w, y1, self.linear2b, relu=True)
-        y3 = linear_layer(self.linear3w, y2, self.linear3b)        
-
-        # Argmax
-        out = argmax(y3)
+        y = x
+        for i in range(self.num_layers):
+            relu = not i==(self.num_layers-1)
+            y = linear_layer(self.ckpt[f"Linear{i+1}.weight"], y, self.ckpt[f"Linear{i+1}.bias"], relu=relu)
         
-
+        # Argmax
+        out = argmax(y)
+        
         return out
     
 
@@ -50,7 +44,7 @@ if __name__ == "__main__":
     env = gym.make('CartPole-v1', render_mode="rgb_array")
 
 
-    model = RawNet(json_dict)
+    model = NeuralNetwork(json_dict)
 
     while True:
         s, info = env.reset()

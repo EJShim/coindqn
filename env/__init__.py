@@ -55,13 +55,13 @@ class CoinEnv:
 
         pos = self.position
         if action == 0:
-            pos = [pos[0]-1, pos[1]]            
+            pos = [pos[0], pos[1]-1]            
         elif action == 1:            
-            pos = [pos[0], pos[1]+1]         
+            pos = [pos[0]-1, pos[1]]         
         elif action == 2:            
-            pos = [pos[0]+1, pos[1]]
+            pos = [pos[0], pos[1]+1]
         else:
-            pos = [pos[0], pos[1]-1]
+            pos = [pos[0]+1, pos[1]]
 
         # Check Valid Position
         if self.invalid_position(pos) :            

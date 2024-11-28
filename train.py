@@ -26,8 +26,8 @@ class Q_net(torch.nn.Module):
         self.action_space = action_space
 
         # NEtwork 
-        self.Linear1 = torch.nn.Linear(state_space, 64)        
-        self.Linear2 = torch.nn.Linear(64, 128)
+        self.Linear1 = torch.nn.Linear(state_space, 256)        
+        self.Linear2 = torch.nn.Linear(256, 128)
         self.Linear3 = torch.nn.Linear(128, 64)
         self.Linear4 = torch.nn.Linear(64, action_space)
 
