@@ -14,15 +14,22 @@ class CoinEnv:
         self.score = 0
 
         # Random Map Objects
-        self.consts =     [-1, 0, 10, 100, 200, 500]
-        self.percentage = np.array([ 3.5,5,4,3,2, 1])
-        self.percentage = np.exp(self.percentage)/sum(np.exp(self.percentage))        
+        # Wall = 32
+        # Blank = 76
+        # COPPER = 52
+        # Silver = 52
+        # Gold = 16
+        # DIAMONDS = 8
+        # Black thing = 4
+        self.consts =     [-1, 0, 10, 30, 100, 200, 500]
+        self.percentage = np.array([ 32, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
+        self.percentage /= self.percentage.sum()  # sum 1
 
 
     def reset(self, seed=0):
         self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
-        self.space[*self.position] = 0
+        self.space[tuple(self.position)] = 0
 
         return self.get_state(), self.convert_index(self.position)
 
@@ -50,8 +57,8 @@ class CoinEnv:
         self.position = pos
 
         # Update MAp and Score
-        self.score += self.space[ *self.position ]
-        self.space[ *self.position ] = 0
+        self.score += self.space[ tuple(self.position) ]
+        self.space[ tuple(self.position) ] = 0
 
         return self.get_state(), self.convert_index(self.position)
  
@@ -64,7 +71,7 @@ class CoinEnv:
             return True
         
         # if wall        
-        if self.space[*position] == -1:
+        if self.space[tuple(position)] == -1:
             return True
         return False
 
