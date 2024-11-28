@@ -27,6 +27,7 @@ class CoinEnv:
 
         self.explor_map = None
         self.explor_reward = 100
+        self.time_step = None
 
 
     def reset(self, seed=0):
@@ -34,6 +35,7 @@ class CoinEnv:
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
         self.space[tuple(self.position)] = 0
         self.score = 0
+        self.time_step = 0
 
         # for exploration reward
         self.explor_map = np.ones((self.row, self.column))
@@ -71,10 +73,12 @@ class CoinEnv:
             self.space[ tuple(self.position) ] = 0
             reward += score
             # Add Exploration
-            # reward += self.explor_map[ tuple(self.position) ] # exp reward     
-            # self.explor_map[ tuple(self.position) ] = -10
-        
+            reward += self.explor_map[ tuple(self.position) ] # exp reward     
+            self.explor_map[ tuple(self.position) ] = -10
+        # reward -= self.time_step*10
         self.score += score
+
+        self.time_step += 1
 
         return self.get_state(), reward, done, self.convert_index(self.position)
  
