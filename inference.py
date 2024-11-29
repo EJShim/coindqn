@@ -2,6 +2,7 @@ import cv2
 import time
 from env import CoinEnv
 from env.player import Player
+# from agents.v2 import Player
 
 
 if __name__ == "__main__":

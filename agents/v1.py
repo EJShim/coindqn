@@ -88,7 +88,7 @@ class Player:
         result = [[0] * self._column for _ in range(self._row)]
 
         for r in range(self._row):
-            result[r] = input_map[r*self._column:r*self._column+20 ]
+            result[r] = input_map[r*self._column:r*self._column+self._column ]
 
         return result
 

@@ -67,14 +67,6 @@ if __name__ == "__main__":
     env = CoinEnv()
 
     player = Player()
-    player.initialize(0, env.column, env.row)
-
-    # Prepare Rendering
-    if args.render:
-        cv2.namedWindow("render", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("render", env.column*20, env.row*20)
-        # cv2.namedWindow("player", cv2.WINDOW_NORMAL)
-        # cv2.resizeWindow("player", 128, 128)
         
     # Try to Train
     # Set parameters
@@ -94,21 +86,16 @@ if __name__ == "__main__":
     # Create Q functions
     # state_space = env.column*env.row
 
-    # player.preprocess = 9x9 subgrid method, state space 81
-    # preprocess_append_position = append position, state space 12*20+1
-    preprocess_method = player.preprocess
-    
-    state_space = player._sight * player._sight
 
 
-    Q = Q_net(state_space=state_space,  action_space=4).to(device)
-    Q_target = Q_net(state_space=state_space,  action_space=4).to(device)
+    Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
+    Q_target = Q_net(state_space=player.state_space,  action_space=4).to(device)
     Q_target.load_state_dict(Q.state_dict())
     optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900, 1000], gamma=0.3)
 
     # Create Replay buffer
-    replay_buffer = ReplayBuffer(state_space, size=buffer_len, batch_size=batch_size)
+    replay_buffer = ReplayBuffer(player.state_space, size=buffer_len, batch_size=batch_size)
 
     # Start Training
     epsilon = eps_start
@@ -118,29 +105,23 @@ if __name__ == "__main__":
     writer = SummaryWriter(log_dir=output_dir)
     
     for i in range(episodes):
-        space, position_index = env.reset()        
         done = False
-
-
-        state = preprocess_method(space, position_index) # space : col * row + 1
+        
+        space, position_index = env.reset()
+        player.initialize(0, env.column, env.row)        
+        state = player.preprocess(space, position_index) # space : col * row + 1
 
         Q.train()
         Q_target.train()
         for t in range(max_step):
-            
-            # view = np.array(view).reshape(player._sight, player._sight)
-            # player_view = render(view, [4,4])
-            # cv2.imshow("player", player_view)
 
             # Take Action
-
             state_tensor = torch.tensor(state, dtype=torch.float32)
             action = Q.sample_action(state_tensor, epsilon)
 
-
             # Next Step
-            space, reward, done, position_index = env.step(action)
-            state_prime = preprocess_method(space, position_index)
+            space, reward, done, position_index = env.step(action)            
+            state_prime = player.preprocess(space, position_index)
             
             
             done_mask = 0.0 if done else 1.0
