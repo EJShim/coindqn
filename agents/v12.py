@@ -45,7 +45,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "Agent V1"
+        return "Elmo V1.2"
 
     def initialize(self, my_number: int, column: int, row: int):
         
