@@ -75,12 +75,12 @@ if __name__ == "__main__":
     episodes = 5000
     print_per_iter = 100
     
-    eps_start = 0.9
+    eps_start = 0.99
     eps_end = 0.001
-    eps_decay = 0.995
+    eps_decay = 0.999
     max_step = 300
 
-    target_update_period = 700
+    target_update_period = 100
     tau = 1e-2
 
     # Create Q functions
@@ -156,7 +156,8 @@ if __name__ == "__main__":
         # Output
         writer.add_scalar("output/Score", env.score, i)
         writer.add_scalar("output/Reward", env.reward, i)
-        writer.add_scalar("Loss", loss, i)
+        writer.add_scalar("train/Loss", loss, i)
+        writer.add_scalar("train/Epsilon", epsilon, i)
         print(f"episode {i}, score {env.score}, reward {env.reward}")
 
         epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing

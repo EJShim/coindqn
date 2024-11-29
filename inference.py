@@ -8,7 +8,7 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    env = CoinEnv(wall=5)
+    env = CoinEnv(wall=15)
 
     player = Player()
     # player._sight = 21
