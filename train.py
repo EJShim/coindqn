@@ -51,7 +51,7 @@ class Q_net(torch.nn.Module):
 
 if __name__ == "__main__":
 
-    torch.random.manual_seed(0)
+    torch.manual_seed(0)
 
     
     parser = argparse.ArgumentParser()
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     eps_end = 0.001
     eps_decay = 0.995
     tau = 1*1e-2
-    max_step = 2000
+    max_step = 500
 
     # Create Q functions
     # state_space = env.column*env.row
@@ -122,9 +122,11 @@ if __name__ == "__main__":
             # Next Step
             space, reward, done, position_index = env.step(action)            
             state_prime = player.preprocess(space, position_index)
-            
-            
+
+            # Check Done State
+            done = (t >= max_step) or done
             done_mask = 0.0 if done else 1.0
+            
             replay_buffer.put(np.array(state), action, reward/100.0, np.array(state_prime), done_mask)
 
             # Update State
@@ -151,8 +153,8 @@ if __name__ == "__main__":
 
         # Output
         writer.add_scalar("Score", env.score, i)
-        writer.add_scalar("Epsilon", epsilon, i)
-        print(f"episode {i}, score {env.score}, epsilon {epsilon} ")
+        writer.add_scalar("Reward", env.reward, i)
+        print(f"episode {i}, score {env.score}, reward {env.reward} ")
 
 
         epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing

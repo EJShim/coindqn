@@ -12,6 +12,7 @@ class CoinEnv:
         # Player Info
         self.position = [ random.randint(0,self.row), random.randint(0,self.column)  ]
         self.score = 0
+        self.reward = 0
 
         # Random Map Objects
         # Wall = 32
@@ -35,6 +36,7 @@ class CoinEnv:
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
         self.space[tuple(self.position)] = 0
         self.score = 0
+        self.reward = 0
         self.time_step = 0
 
         # for exploration reward
@@ -73,8 +75,8 @@ class CoinEnv:
         else:        
 
             # Update Exp map
-            self.explor_map += self.explor_limit
-            self.explor_map[tuple(self.position)] = -self.explor_limit
+            self.explor_map += 1
+            self.explor_map[tuple(self.position)] = -10
 
             # Update Position
             self.position = pos
@@ -86,12 +88,14 @@ class CoinEnv:
 
 
             reward += self.explor_map[ tuple(self.position) ] # exp rewar
-            if self.explor_map[ tuple(pos) ] < 0:
-                done = True
+            # if self.explor_map[ tuple(pos) ] < 0:
+            #     done = True
         # reward -= self.time_step*10
         self.score += score
 
         self.time_step += 1
+
+        self.reward += reward
 
         return self.get_state(), reward, done, self.convert_index(self.position)
  
