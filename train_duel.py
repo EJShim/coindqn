@@ -9,7 +9,7 @@ from pathlib import Path
 
 from env.player import Player
 from env.render import render
-from utils import ReplayBuffer, train, save_model
+from utils import ReplayBuffer, save_model
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
@@ -19,10 +19,45 @@ device = torch.device("cpu")
 if torch.cuda.is_available():
     device = torch.device("cuda")
 
-class Q_net(torch.nn.Module):
-    def __init__(self, state_space, action_space):
-        super(Q_net, self).__init__()
 
+
+def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optimizer = None, gamma=0.99):
+
+    assert device is not None, "None Device input: device should be selected."
+
+    # Get batch from replay buffer
+    samples = replay_buffer.sample()
+    
+    states = torch.FloatTensor(samples["obs"]).to(device)
+    actions = torch.LongTensor(samples["acts"].reshape(-1,1)).to(device)
+    rewards = torch.FloatTensor(samples["rews"].reshape(-1,1)).to(device)
+    next_states = torch.FloatTensor(samples["next_obs"]).to(device)
+    dones = torch.FloatTensor(samples["done"].reshape(-1,1)).to(device)
+
+    # Define loss
+    argmax_a = q_net(next_states).argmax(dim=1).unsqueeze(-1)
+    q_target_max  = target_q_net(next_states).gather(1, argmax_a)
+    # q_target_max = target_q_net(next_states).max(1)[0].unsqueeze(1).detach()
+    targets = rewards + gamma*q_target_max*dones
+
+
+    q_out = q_net(states)
+    q_a = q_out.gather(1, actions)
+
+    # Multiply Importance Sampling weights to loss        
+    # loss = torch.nn.functional.smooth_l1_loss(q_a, targets)
+    loss = torch.nn.functional.mse_loss(q_a, targets)
+
+    # Update Network
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
+
+class Dual_Q_Net(torch.nn.Module):
+    def __init__(self, state_space, action_space):
+        super(Dual_Q_Net, self).__init__()
         self.action_space = action_space
 
         self.layers = torch.nn.Sequential(
@@ -31,19 +66,27 @@ class Q_net(torch.nn.Module):
             torch.nn.Linear(256, 128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, action_space)
+            torch.nn.ReLU()
         )
-    def forward(self, x):        
-        y = self.layers(x)
-        return y    
 
+        self.V = torch.nn.Linear(64, 1)
+        self.A = torch.nn.Linear(64, action_space)
+
+    def forward(self, x):
+        s = self.layers(x)
+        Adv = self.A(s)
+        V = self.V(s)
+        Q = V + (Adv - torch.mean(Adv, dim=-1, keepdim=True))  # Q(s,a)=V(s)+A(s,a)-mean(A(s,a))
+        return Q
+    
     def sample_action(self, obs, epsilon):
         if random.random() < epsilon:
             return random.randint(0, self.action_space-1)
         else:
             y = self.forward(obs)
             return y.argmax().item()
+
+
 
 
 
@@ -57,7 +100,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Create Output Dir
-    exp_name = time.strftime("%Y%m%d-%H%M%S") + "_exp"
+    exp_name = time.strftime("%Y%m%d-%H%M%S") + "_exp_duel"
     output_dir = Path("./output").joinpath(exp_name)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -74,11 +117,11 @@ if __name__ == "__main__":
     min_buffer_len = batch_size*100
     episodes = 5000
     print_per_iter = 100
-    target_update_period = 100
+    target_update_period = 1000
     eps_start = 0.9
     eps_end = 0.001
     eps_decay = 0.995
-    tau = 1*1e-2
+    tau = 1e-2
     max_step = 100
 
     # Create Q functions
@@ -86,17 +129,18 @@ if __name__ == "__main__":
 
 
 
-    Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
+    Q = Dual_Q_Net(state_space=player.state_space,  action_space=4).to(device)
 
     if args.resume:
         print("Load Checkpoint : ", args.resume)
         Q.load_state_dict(torch.load(args.resume))
 
-    Q_target = Q_net(state_space=player.state_space,  action_space=4).to(device)
-    
+    Q_target = Dual_Q_Net(state_space=player.state_space,  action_space=4).to(device)    
     Q_target.load_state_dict(Q.state_dict())
+    for p in Q_target.parameters(): p.requires_grad = False
+
     optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate, weight_decay=1e-5)
-    # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900], gamma=0.3)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[1500], gamma=0.001)
 
     # Create Replay buffer
     replay_buffer = ReplayBuffer(player.state_space, size=buffer_len, batch_size=batch_size)
@@ -117,9 +161,8 @@ if __name__ == "__main__":
 
         Q.train()
         Q_target.train()
-
-        loss = 0
         for t in range(max_step):
+
             # Take Action
             state_tensor = torch.tensor(state, dtype=torch.float32)
             action = Q.sample_action(state_tensor, epsilon)
@@ -132,13 +175,15 @@ if __name__ == "__main__":
             done = (t >= max_step) or done
             done_mask = 0.0 if done else 1.0
             
-            replay_buffer.put(np.array(state), action, reward/100.0, np.array(state_prime), done_mask)
+            replay_buffer.put(np.array(state), action, reward, np.array(state_prime), done_mask)
 
             # Update State
             state = state_prime
-            
+
+            loss = 0
+
             if len(replay_buffer) >= min_buffer_len:
-                loss += train(Q, Q_target, replay_buffer, device, optimizer=optimizer)
+                loss = train(Q, Q_target, replay_buffer, device, optimizer=optimizer)
                 # scheduler.step()
 
                 if (t+1) % target_update_period == 0:

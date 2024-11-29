@@ -75,8 +75,8 @@ class CoinEnv:
         else:        
 
             # Update Exp map
-            self.explor_map += 1
-            self.explor_map[tuple(self.position)] = -10
+            # self.explor_map += 1
+            # self.explor_map[tuple(self.position)] = -3
 
             # Update Position
             self.position = pos
@@ -87,10 +87,12 @@ class CoinEnv:
             # Add Exploration
 
 
-            reward += self.explor_map[ tuple(self.position) ] # exp rewar
+            # reward += self.explor_map[ tuple(self.position) ] # exp rewar
             # if self.explor_map[ tuple(pos) ] < 0:
             #     done = True
-        # reward -= self.time_step*10
+        
+        # reward -= self.time_step*0.1
+
         self.score += score
 
         self.time_step += 1

@@ -128,6 +128,8 @@ def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optim
     loss.backward()
     optimizer.step()
 
+    return loss.item()
+
 
 def save_model(model, save_path):
 
