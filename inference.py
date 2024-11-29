@@ -8,7 +8,7 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    env = CoinEnv(wall=10)
+    env = CoinEnv(wall=5)
 
     player = Player()
     # player._sight = 21
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     space, position_index = env.reset()        
 
-    for t in range(300):
+    for t in range(1000):
 
         action = player.move_next(space, position_index)        
         space, reward, done, position_index = env.step(action) 

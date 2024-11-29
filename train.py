@@ -160,7 +160,7 @@ if __name__ == "__main__":
         writer.add_scalar("output/Score", env.score, i)
         writer.add_scalar("output/Reward", env.reward, i)
         writer.add_scalar("Loss", loss, i)
-        print(f"episode {i}, score {env.score}, reward {env.reward} ")
+        print(f"episode {i}, score {env.score}, reward {env.reward}, explored {env.explored}")
 
 
         epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing

@@ -38,6 +38,7 @@ class CoinEnv:
         self.score = 0
         self.reward = 0
         self.time_step = 0
+        self.explored = 0
 
         # for exploration reward
         self.explor_limit = 3
@@ -70,13 +71,10 @@ class CoinEnv:
 
         # Check Valid Position
         if self.invalid_position(pos) :            
-            reward = -100
-            done = True
+            reward = -50            
         else:        
 
-            # Update Exp map
-            self.explor_map += 1
-            self.explor_map[tuple(self.position)] = -3
+            # Update Exp map            
 
             # Update Position
             self.position = pos
@@ -85,18 +83,21 @@ class CoinEnv:
             reward += score
 
             # Add Exploration
-
-            reward += self.explor_map[ tuple(self.position) ] # exp rewar
-            # if self.explor_map[ tuple(pos) ] < 0:
-            #     done = True
+            if self.explor_map[ tuple(self.position) ] == 0:
+                reward += 100
+                self.explor_map[ tuple(self.position) ] = 1 # exp rewar            
+            if self.explor_map.sum() > self.row * self.column * 0.6:
+                done = True
+                reward += 1000
         
-        reward -= self.time_step*0.1
+        # reward -= self.time_step*0.1
 
         self.score += score
 
         self.time_step += 1
 
         self.reward += reward
+        self.explored = self.explor_map.sum() / (self.row * self.column)
 
         return self.get_state(), reward, done, self.convert_index(self.position)
  
