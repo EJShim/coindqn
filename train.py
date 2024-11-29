@@ -76,11 +76,11 @@ if __name__ == "__main__":
     print_per_iter = 100
     
     eps_start = 0.99
-    eps_end = 0.001
+    eps_end = 0.4
     eps_decay = 0.999
     max_step = 300
 
-    target_update_period = 100
+    target_update_period = 1000
     tau = 1e-2
 
     # Create Q functions
