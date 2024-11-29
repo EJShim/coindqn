@@ -61,7 +61,7 @@ class CoinEnv:
 
         # Check Valid Position
         if self.invalid_position(pos) :            
-            reward = 0
+            reward = -10
         else:        
             # Update Position
             self.position = pos

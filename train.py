@@ -74,12 +74,14 @@ if __name__ == "__main__":
     min_buffer_len = batch_size*100
     episodes = 5000
     print_per_iter = 100
-    target_update_period = 100
+    
     eps_start = 0.9
     eps_end = 0.001
     eps_decay = 0.995
-    tau = 1e-2
     max_step = 300
+
+    target_update_period = 700
+    tau = 1e-2
 
     # Create Q functions
     Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
@@ -102,6 +104,7 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(log_dir=output_dir)
     
+    step = 0
     for i in range(episodes):
         done = False
         
@@ -114,6 +117,7 @@ if __name__ == "__main__":
 
         loss = 0
         for t in range(max_step):
+            step += 1
             # Take Action
             state_tensor = torch.tensor(state, dtype=torch.float32)
             action = Q.sample_action(state_tensor, epsilon)
@@ -135,8 +139,7 @@ if __name__ == "__main__":
                 loss += train(Q, Q_target, replay_buffer, device, optimizer=optimizer)
                 # scheduler.step()
 
-                if (t+1) % target_update_period == 0:
-                    # Q_target.load_state_dict(Q.state_dict()) <- naive update
+                if step % target_update_period == 0:                    
                     for target_param, local_param in zip(Q_target.parameters(), Q.parameters()): #<- soft update
                             target_param.data.copy_(tau*local_param.data + (1.0 - tau)*target_param.data)
                 
