@@ -41,7 +41,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "Elmo V1"
+        return "Elmo V1.4"
 
     def initialize(self, my_number: int, column: int, row: int):
         
@@ -49,17 +49,21 @@ class Player:
         self._column = column
         self._row = row
         self._sight = 9
-        self.prev_position_index = None
+        # self.prev_position_index = None
         self._nn = NeuralNetwork(ckpt)
+
+        # Check Exploration        
+        self.step = 0
+        self.explored = [0] * self._row * self._column
 
     def move_next(self, map: list[int], my_position: int) -> int:
         # Mask previous position
-        if self.prev_position_index: map[self.prev_position_index] = -1
+        # if self.prev_position_index: map[self.prev_position_index] = -1
 
         input_data = self.preprocess(map, my_position)
         score = self._nn(input_data)
 
-        self.prev_position_index = my_position
+        # self.prev_position_index = my_position
 
         # preprocess subgrid charactor index 
         sg_index = (self._sight * self._sight) // 2
@@ -75,9 +79,20 @@ class Player:
         # TODO : Get Candidate
         index = sorted(range(len(score)), key=lambda k: score[k],reverse=True)
 
+        # Remove Invalid Direction
+        valid_indices = []
         for valid in index:
             if candidates[valid] != -1:
-                return valid
+                valid_indices.append(valid)
+
+        return_idx = 0
+
+        if self.step > 10:
+            epsilon = self.explored[my_position] / self.step
+            if epsilon > 0.04:
+                return_idx = random.randint(0, len(valid_indices)-1)
+
+        return valid_indices[return_idx]
 
             
     def make_2d_input_map(self, input_map):
@@ -108,6 +123,11 @@ class Player:
         return [ index // self._column, index % self._column]
     
     def preprocess(self, state, index):
+        # Append History
+        self.step += 1
+        self.explored[index] += 1
+
+
         position = self.index_to_position(index) # This is correct
         map2d = self.make_2d_input_map(state)
         sample_map = self.sample_pad_2d_input_map(map2d, position)

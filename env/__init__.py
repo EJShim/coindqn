@@ -5,7 +5,7 @@ from .render import render
 np.set_printoptions(precision=5)
 
 class CoinEnv:
-    def __init__(self):
+    def __init__(self, wall=32):
         self.row = 12
         self.column = 20
 
@@ -23,7 +23,7 @@ class CoinEnv:
         # DIAMONDS = 8
         # Black thing = 4
         self.consts =     [-1, 0, 10, 30, 100, 200, 500]
-        self.percentage = np.array([ 32, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
+        self.percentage = np.array([ wall, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
         self.percentage /= self.percentage.sum()  # sum 1
 
         self.explor_map = None

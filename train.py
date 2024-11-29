@@ -26,9 +26,7 @@ class Q_net(torch.nn.Module):
         self.action_space = action_space
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(state_space, 512),
-            torch.nn.ReLU(),
-            torch.nn.Linear(512, 256),
+            torch.nn.Linear(state_space, 256),
             torch.nn.ReLU(),
             torch.nn.Linear(256, 128),
             torch.nn.ReLU(),
@@ -50,12 +48,12 @@ class Q_net(torch.nn.Module):
 
 
 if __name__ == "__main__":
-
     torch.manual_seed(0)
 
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--resume", type=Path, default="ckpts/v1.pth")
     args = parser.parse_args()
 
     # Create Output Dir
@@ -89,10 +87,16 @@ if __name__ == "__main__":
 
 
     Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
+
+    if args.resume:
+        print("Load Checkpoint : ", args.resume)
+        Q.load_state_dict(torch.load(args.resume))
+
     Q_target = Q_net(state_space=player.state_space,  action_space=4).to(device)
+    
     Q_target.load_state_dict(Q.state_dict())
     optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900, 1000], gamma=0.3)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900], gamma=0.3)
 
     # Create Replay buffer
     replay_buffer = ReplayBuffer(player.state_space, size=buffer_len, batch_size=batch_size)

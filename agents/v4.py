@@ -47,7 +47,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "Agent V3.1"
+        return "Elmo V4.0"
 
     def initialize(self, my_number: int, column: int, row: int):
         
@@ -89,7 +89,7 @@ class Player:
 
         return_idx = 0
         epsilon = self.explored[my_position] / self.step
-        if epsilon > 0.1:
+        if epsilon > 0.04:
             return_idx = random.randint(0, len(valid_indices)-1)
 
         return valid_indices[return_idx]
@@ -134,12 +134,12 @@ class Player:
         self.explored[index] += 1
 
         #First attempt : calculate exploration score, remove from state
-        # exploration_score  = list(map(lambda x: x*10 / self.step, self.explored))
-        # state_with_exploration = list( map(add, state, exploration_score) )
+        exploration_score  = list(map(lambda x: x*10 / self.step, self.explored))
+        state_with_exploration = list( map(add, state, exploration_score) )
 
 
         position = self.index_to_position(index) # This is correct
-        map2d = self.make_2d_input_map(state)
+        map2d = self.make_2d_input_map(state_with_exploration)
         sample_map = self.sample_pad_2d_input_map(map2d, position)
         
         

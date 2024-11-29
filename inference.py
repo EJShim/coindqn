@@ -2,16 +2,21 @@ import cv2
 import time
 from env import CoinEnv
 from env.player import Player
-# from agents.v2 import Player
+from env.render import render
+import numpy as np
+from agents.v1 import Player
 
 
 if __name__ == "__main__":
-    env = CoinEnv()
+    env = CoinEnv(wall=32)
 
     player = Player()
+    # player._sight = 21
     player.initialize(0, env.column, env.row)
 
     cv2.namedWindow("render", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("player", cv2.WINDOW_NORMAL)
+
 
 
     space, position_index = env.reset()        
@@ -22,8 +27,11 @@ if __name__ == "__main__":
         space, reward, done, position_index = env.step(action) 
 
         screen = env.render()
-
+        # charactor_view = render( np.array(player.firstperson_view(space, position_index)), [player._sight//2, player._sight//2])
         cv2.resizeWindow("render", int(env.column*20), int(env.row*20))
+        # cv2.resizeWindow("player", 256, 256)
+
         cv2.imshow("render", screen)
+        # cv2.imshow("player", charactor_view)
         cv2.waitKey(1)
         time.sleep(0.00001)
