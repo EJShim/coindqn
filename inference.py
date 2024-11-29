@@ -11,7 +11,6 @@ if __name__ == "__main__":
     player.initialize(0, env.column, env.row)
 
     cv2.namedWindow("render", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("render", env.column*20, env.row*20)
 
 
     space, position_index = env.reset()        
@@ -26,6 +25,8 @@ if __name__ == "__main__":
 
 
         screen = env.render()
+
+        cv2.resizeWindow("render", int(env.column*20), int(env.row*20))
         cv2.imshow("render", screen)
         cv2.waitKey(1)
-        time.sleep(0.1)
+        time.sleep(0.00001)
