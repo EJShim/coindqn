@@ -15,14 +15,10 @@ if __name__ == "__main__":
 
     space, position_index = env.reset()        
 
-    for t in range(2000):
+    for t in range(300):
 
-        
-
-                
         action = player.move_next(space, position_index)        
         space, reward, done, position_index = env.step(action) 
-
 
         screen = env.render()
 
