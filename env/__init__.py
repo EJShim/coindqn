@@ -5,7 +5,7 @@ from .render import render
 np.set_printoptions(precision=5)
 
 class CoinEnv:
-    def __init__(self, wall=32):
+    def __init__(self, blank=76, wall=32):
         self.row = 12
         self.column = 20
 
@@ -23,7 +23,7 @@ class CoinEnv:
         # DIAMONDS = 8
         # Black thing = 4
         self.consts =     [-1, 0, 10, 30, 100, 200, 500]
-        self.percentage = np.array([ wall, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
+        self.percentage = np.array([ wall, blank, 52, 52, 16, 8 ,4], dtype=np.float32)
         self.percentage /= self.percentage.sum()  # sum 1
 
         self.explor_map = None
@@ -75,8 +75,8 @@ class CoinEnv:
         else:        
 
             # Update Exp map
-            # self.explor_map += 1
-            # self.explor_map[tuple(self.position)] = -3
+            self.explor_map += 1
+            self.explor_map[tuple(self.position)] = -3
 
             # Update Position
             self.position = pos
@@ -86,12 +86,11 @@ class CoinEnv:
 
             # Add Exploration
 
-
-            # reward += self.explor_map[ tuple(self.position) ] # exp rewar
+            reward += self.explor_map[ tuple(self.position) ] # exp rewar
             # if self.explor_map[ tuple(pos) ] < 0:
             #     done = True
         
-        # reward -= self.time_step*0.1
+        reward -= self.time_step*0.1
 
         self.score += score
 

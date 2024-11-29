@@ -121,7 +121,7 @@ def train(q_net=None, target_q_net=None, replay_buffer=None, device=None,  optim
     q_a = q_out.gather(1, actions)
 
     # Multiply Importance Sampling weights to loss        
-    loss = torch.nn.functional.smooth_l1_loss(q_a, targets)
+    loss = torch.nn.functional.mse_loss(q_a, targets)
 
     # Update Network
     optimizer.zero_grad()

@@ -26,13 +26,17 @@ class Q_net(torch.nn.Module):
         self.action_space = action_space
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(state_space, 256),
+            torch.nn.Linear(state_space, 512),            
+            torch.nn.ReLU(),
+            torch.nn.Linear(512, 256),
             torch.nn.ReLU(),
             torch.nn.Linear(256, 128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, action_space)
+            torch.nn.Linear(64, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, action_space)
         )
     def forward(self, x):        
         y = self.layers(x)
@@ -78,14 +82,10 @@ if __name__ == "__main__":
     eps_start = 0.9
     eps_end = 0.001
     eps_decay = 0.995
-    tau = 1*1e-2
-    max_step = 100
+    tau = 1e-2
+    max_step = 300
 
     # Create Q functions
-    # state_space = env.column*env.row
-
-
-
     Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
 
     if args.resume:
@@ -95,8 +95,8 @@ if __name__ == "__main__":
     Q_target = Q_net(state_space=player.state_space,  action_space=4).to(device)
     
     Q_target.load_state_dict(Q.state_dict())
-    optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate, weight_decay=1e-5)
-    # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[450, 500, 600 ,700, 800, 900], gamma=0.3)
+    optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate)
+    # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[1000, 1500, 2500], gamma=0.1)
 
     # Create Replay buffer
     replay_buffer = ReplayBuffer(player.state_space, size=buffer_len, batch_size=batch_size)
@@ -157,8 +157,8 @@ if __name__ == "__main__":
             # time.sleep(0.1)
 
         # Output
-        writer.add_scalar("Score", env.score, i)
-        writer.add_scalar("Reward", env.reward, i)
+        writer.add_scalar("output/Score", env.score, i)
+        writer.add_scalar("output/Reward", env.reward, i)
         writer.add_scalar("Loss", loss, i)
         print(f"episode {i}, score {env.score}, reward {env.reward} ")
 

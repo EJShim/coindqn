@@ -4,11 +4,11 @@ from env import CoinEnv
 from env.player import Player
 from env.render import render
 import numpy as np
-from agents.v1 import Player
+# from agents.v1 import Player
 
 
 if __name__ == "__main__":
-    env = CoinEnv(wall=32)
+    env = CoinEnv(wall=10)
 
     player = Player()
     # player._sight = 21
