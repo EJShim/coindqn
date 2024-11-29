@@ -26,17 +26,13 @@ class Q_net(torch.nn.Module):
         self.action_space = action_space
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(state_space, 512),            
-            torch.nn.ReLU(),
-            torch.nn.Linear(512, 256),
+            torch.nn.Linear(state_space, 256),            
             torch.nn.ReLU(),
             torch.nn.Linear(256, 128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 32),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32, action_space)
+            torch.nn.Linear(64, action_space)
         )
     def forward(self, x):        
         y = self.layers(x)
@@ -104,8 +100,6 @@ if __name__ == "__main__":
     # Start Training
     epsilon = eps_start
 
-
-
     writer = SummaryWriter(log_dir=output_dir)
     
     for i in range(episodes):
@@ -160,13 +154,11 @@ if __name__ == "__main__":
         writer.add_scalar("output/Score", env.score, i)
         writer.add_scalar("output/Reward", env.reward, i)
         writer.add_scalar("Loss", loss, i)
-        print(f"episode {i}, score {env.score}, reward {env.reward}, explored {env.explored}")
-
+        print(f"episode {i}, score {env.score}, reward {env.reward}")
 
         epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing
 
         # TODO : Save
-        
         if i % print_per_iter == 0 and i!=0 or i == episodes-1:
             save_path = output_dir.joinpath(f"eps_{i}.pth")
             save_model(Q, save_path)

@@ -26,25 +26,16 @@ class CoinEnv:
         self.percentage = np.array([ wall, blank, 52, 52, 16, 8 ,4], dtype=np.float32)
         self.percentage /= self.percentage.sum()  # sum 1
 
-        self.explor_map = None
-        self.explor_reward = None
-        self.time_step = None
 
+    def reset(self, row=12, column=20):
+        self.row = row
+        self.column = column
 
-    def reset(self, seed=0):
         self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
         self.space[tuple(self.position)] = 0
         self.score = 0
         self.reward = 0
-        self.time_step = 0
-        self.explored = 0
-
-        # for exploration reward
-        self.explor_limit = 3
-        self.explor_map = np.zeros((self.row, self.column))
-        
-
         return self.get_state(), self.convert_index(self.position)
 
 
@@ -53,7 +44,6 @@ class CoinEnv:
 
     def step(self, action):
         
-
         done = False
         reward = 0 # reward for training
         score = 0 # just coin score
@@ -71,37 +61,22 @@ class CoinEnv:
 
         # Check Valid Position
         if self.invalid_position(pos) :            
-            reward = -50            
+            reward = 0
         else:        
-
-            # Update Exp map            
-
             # Update Position
             self.position = pos
+
+            # Update Score
             score += self.space[ tuple(self.position) ] # coin reward      
             self.space[ tuple(self.position) ] = 0
             reward += score
-
-            # Add Exploration
-            if self.explor_map[ tuple(self.position) ] == 0:
-                reward += 100
-                self.explor_map[ tuple(self.position) ] = 1 # exp rewar            
-            if self.explor_map.sum() > self.row * self.column * 0.6:
-                done = True
-                reward += 1000
         
         # reward -= self.time_step*0.1
 
         self.score += score
-
-        self.time_step += 1
-
         self.reward += reward
-        self.explored = self.explor_map.sum() / (self.row * self.column)
 
         return self.get_state(), reward, done, self.convert_index(self.position)
- 
-
 
     def invalid_position(self, position):        
         if position[0] < 0 or position[0] > self.row-1:
