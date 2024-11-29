@@ -26,7 +26,7 @@ class CoinEnv:
         self.percentage /= self.percentage.sum()  # sum 1
 
         self.explor_map = None
-        self.explor_reward = 100
+        self.explor_reward = None
         self.time_step = None
 
 
@@ -38,8 +38,9 @@ class CoinEnv:
         self.time_step = 0
 
         # for exploration reward
-        self.explor_map = np.ones((self.row, self.column))
-        self.explor_reward = 100
+        self.explor_limit = 3
+        self.explor_map = np.zeros((self.row, self.column))
+        
 
         return self.get_state(), self.convert_index(self.position)
 
@@ -48,6 +49,7 @@ class CoinEnv:
         return render(self.space, self.position)
 
     def step(self, action):
+        
 
         done = False
         reward = 0 # reward for training
@@ -63,18 +65,29 @@ class CoinEnv:
         else:
             pos = [pos[0]+1, pos[1]]
 
+
         # Check Valid Position
         if self.invalid_position(pos) :            
             reward = -100
             done = True
         else:        
+
+            # Update Exp map
+            self.explor_map += self.explor_limit
+            self.explor_map[tuple(self.position)] = -self.explor_limit
+
+            # Update Position
             self.position = pos
             score += self.space[ tuple(self.position) ] # coin reward      
             self.space[ tuple(self.position) ] = 0
             reward += score
+
             # Add Exploration
-            reward += self.explor_map[ tuple(self.position) ] # exp reward     
-            self.explor_map[ tuple(self.position) ] = -10
+
+
+            reward += self.explor_map[ tuple(self.position) ] # exp rewar
+            if self.explor_map[ tuple(pos) ] < 0:
+                done = True
         # reward -= self.time_step*10
         self.score += score
 

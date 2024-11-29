@@ -25,19 +25,19 @@ class Q_net(torch.nn.Module):
 
         self.action_space = action_space
 
-        # NEtwork 
-        self.Linear1 = torch.nn.Linear(state_space, 256)        
-        self.Linear2 = torch.nn.Linear(256, 128)
-        self.Linear3 = torch.nn.Linear(128, 64)
-        self.Linear4 = torch.nn.Linear(64, action_space)
-
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(state_space, 512),
+            torch.nn.ReLU(),
+            torch.nn.Linear(512, 256),
+            torch.nn.ReLU(),
+            torch.nn.Linear(256, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, action_space)
+        )
     def forward(self, x):        
-
-        x = torch.nn.functional.relu(self.Linear1(x))
-        x = torch.nn.functional.relu(self.Linear2(x))
-        x = torch.nn.functional.relu(self.Linear3(x))
-
-        y = self.Linear4(x)
+        y = self.layers(x)
         return y    
 
     def sample_action(self, obs, epsilon):
