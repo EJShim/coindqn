@@ -54,6 +54,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--batch_size", type=int, default = 64)
+    parser.add_argument("--learning_rate", type=float, default = 1e-3) 
+    parser.add_argument("--buffer_len", type=int, default = 100000)
+    parser.add_argument("--min_buffer_len", type=int, default = 64*100)
+    parser.add_argument("--episodes", type=int, default=5000 )
+    parser.add_argument("--print_per_iter", type=int, default=5000)
+    parser.add_argument("--eps_start", type=int, default=0.99)
+    parser.add_argument("--eps_end", type=int, default=0.1)
+    parser.add_argument("--eps_decay", type=float, default=1e-3)
+    parser.add_argument("--max_step", type=int, default=300)
+    parser.add_argument("--target_update_period", type=int, default=10000) 
+    parser.add_argument("--tau", type=float, default=1e-2)
     args = parser.parse_args()
 
     # Create Output Dir
@@ -67,21 +79,12 @@ if __name__ == "__main__":
     player = Player()
         
     # Try to Train
-    # Set parameters
-    batch_size = 64
-    learning_rate = 1e-3
-    buffer_len = int(100000)
-    min_buffer_len = batch_size*100
-    episodes = 5000
-    print_per_iter = 100
-    
-    eps_start = 0.99
-    eps_end = 0.4
-    eps_decay = 0.999
-    max_step = 300
 
-    target_update_period = 1000
-    tau = 1e-2
+    
+    
+
+    writer = SummaryWriter(log_dir=output_dir, comment=exp_name)
+    writer.add_hparams(vars(args), {})
 
     # Create Q functions
     Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
@@ -93,19 +96,19 @@ if __name__ == "__main__":
     Q_target = Q_net(state_space=player.state_space,  action_space=4).to(device)
     
     Q_target.load_state_dict(Q.state_dict())
-    optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(Q.parameters(), lr=args.learning_rate)
     # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[1000, 1500, 2500], gamma=0.1)
 
     # Create Replay buffer
-    replay_buffer = ReplayBuffer(player.state_space, size=buffer_len, batch_size=batch_size)
+    replay_buffer = ReplayBuffer(player.state_space, size=args.buffer_len, batch_size=args.batch_size)
 
     # Start Training
-    epsilon = eps_start
+    epsilon = args.eps_start
 
     writer = SummaryWriter(log_dir=output_dir)
     
     step = 0
-    for i in range(episodes):
+    for i in range(args.episodes):
         done = False
         
         space, position_index = env.reset()
@@ -116,7 +119,7 @@ if __name__ == "__main__":
         Q_target.train()
 
         loss = 0
-        for t in range(max_step):
+        for t in range(args.max_step):
             step += 1
             # Take Action
             state_tensor = torch.tensor(state, dtype=torch.float32)
@@ -127,7 +130,7 @@ if __name__ == "__main__":
             state_prime = player.preprocess(space, position_index)
 
             # Check Done State
-            done = (t >= max_step) or done
+            done = (t >= args.max_step) or done
             done_mask = 0.0 if done else 1.0
             
             replay_buffer.put(np.array(state), action, reward/100.0, np.array(state_prime), done_mask)
@@ -135,13 +138,13 @@ if __name__ == "__main__":
             # Update State
             state = state_prime
             
-            if len(replay_buffer) >= min_buffer_len:
+            if len(replay_buffer) >= args.min_buffer_len:
                 loss += train(Q, Q_target, replay_buffer, device, optimizer=optimizer)
                 # scheduler.step()
 
-                if step % target_update_period == 0:                    
+                if step % args.target_update_period == 0:                    
                     for target_param, local_param in zip(Q_target.parameters(), Q.parameters()): #<- soft update
-                            target_param.data.copy_(tau*local_param.data + (1.0 - tau)*target_param.data)
+                            target_param.data.copy_(args.tau*local_param.data + (1.0 - args.tau)*target_param.data)
                 
             if done:
                 break
@@ -160,10 +163,10 @@ if __name__ == "__main__":
         writer.add_scalar("train/Epsilon", epsilon, i)
         print(f"episode {i}, score {env.score}, reward {env.reward}")
 
-        epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing
+        epsilon = max(args.eps_end, epsilon * (1.0-args.eps_decay)) #Linear annealing
 
-        # TODO : Save
-        if i % print_per_iter == 0 and i!=0 or i == episodes-1:
+        # Save
+        if i % args.print_per_iter == 0 and i!=0 or i == args.episodes-1:
             save_path = output_dir.joinpath(f"eps_{i}.pth")
             save_model(Q, save_path)
 
