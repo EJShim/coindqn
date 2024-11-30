@@ -145,11 +145,14 @@ class Player:
         top_right = 0
         bottom_left = 0
         bottom_right = 0
-
+        total = 0
         for i in range(self._row):
             for j in range(self._column):
                 value = space[i][j]
-                if value < 0 : continue
+                if value <= 0 : continue
+                total += value
+
+
                 if i<=position[0] and j<=position[1]:
                     top_left += value
                 elif i<=position[0] and j>position[1]:
@@ -159,7 +162,10 @@ class Player:
                 elif i>position[0] and j>position[1]:
                     bottom_right += value
 
-        return [top_left/1000, top_right/1000, bottom_left/1000, bottom_right/1000]
+        quad_scores = [top_left, top_right, bottom_left, bottom_right]
+        out = [x*10/total for x in quad_scores]        
+
+        return out
     
     def preprocess(self, state, index):
 

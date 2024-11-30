@@ -5,10 +5,12 @@ from env import CoinEnv
 # from env.render import render
 import argparse
 import importlib
+import os
 # from agents.v1 import Player
 
 
 if __name__ == "__main__":
+
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--wall", type=int, default=15)
@@ -23,7 +25,7 @@ if __name__ == "__main__":
 
     player.initialize(0, env.column, env.row)
 
-    cv2.namedWindow("render", cv2.WINDOW_NORMAL)
+    
     # cv2.namedWindow("player", cv2.WINDOW_NORMAL)
 
 
@@ -36,6 +38,7 @@ if __name__ == "__main__":
 
         screen = env.render()
         # charactor_view = render( np.array(player.firstperson_view(space, position_index)), [player._sight//2, player._sight//2])
+        cv2.namedWindow("render", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("render", int(env.column*20), int(env.row*20))
         # cv2.resizeWindow("player", 256, 256)
 

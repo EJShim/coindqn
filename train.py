@@ -172,7 +172,7 @@ if __name__ == "__main__":
         epsilon = max(args.eps_end, epsilon * (1.0-args.eps_decay)) #Linear annealing
 
         # Save
-        if i % (args.print_per_iter-1) == 0 and i!=0 or i == args.episodes-1:
+        if i % (args.print_per_iter+1) == 0 and i!=0 or i == args.episodes-1:
             save_path = output_dir.joinpath(f"eps_{i+1}.pth")
             save_model(Q, save_path)
 
