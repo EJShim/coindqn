@@ -5,39 +5,57 @@ from .render import render
 np.set_printoptions(precision=5)
 
 class CoinEnv:
-    def __init__(self, blank=76, wall=32):
-        self.row = 12
-        self.column = 20
+    def __init__(self):
+        self.row = None
+        self.column = None
 
-        # Player Info
-        self.position = [ random.randint(0,self.row), random.randint(0,self.column)  ]
+        self.preset_map = {
+            20 : np.array([0, 0, 0, 0, 0, -1, 30, 30, 30, 100, 100, 30, 30, 30, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 30, 30, 30, 30, 30, 30, 30, 30, -1, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 10, 10, 10, 10, 10, 30, 30, 30, 30, 30, 30, 30, 30, 10, 10, 10, 10, 10, 0, 0, 10, 10, 10, 10, 10, 30, -1, 100, 200, 200, 100, -1, 30, 10, 10, 10, 10, 10, 0, 200, 10, -1, -1, 10, 10, 30, -1, 100, 100, 100, 100, -1, 30, 10, 10, -1, -1, 10, 200, 200, 10, -1, -1, 10, 10, 30, -1, 100, 100, 100, 100, -1, 30, 10, 10, -1, -1, 10, 200, 0, 10, 10, 10, 10, 10, 30, -1, 100, 200, 200, 100, -1, 30, 10, 10, 10, 10, 10, 0, 0, 10, 10, 10, 10, 10, 30, 30, 30, 30, 30, 30, 30, 30, 10, 10, 10, 10, 10, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0, 0, 0, -1, 30, 30, 30, 30, 30, 30, 30, 30, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 30, 30, 30, 100, 100, 30, 30, 30, -1, 0, 0, 0, 0, 0]).reshape(12,20),
+            30 : np.array( [0,0,-1,10,10,10,10,0,0,0,0,0,0,100,100,100,100,0,0,0,0,0,0,10,10,10,10,-1,0,0,0,0,-1,10,10,10,10,0,0,0,-1,0,0,100,200,200,100,0,0,-1,0,0,0,10,10,10,10,-1,0,0,0,0,0,10,10,10,10,-1,0,0,-1,10,10,10,10,10,10,10,10,-1,0,0,-1,10,10,10,10,0,0,0,-1,-1,0,10,10,10,10,-1,0,0,-1,10,10,10,10,10,10,10,10,-1,0,0,-1,10,10,10,10,0,-1,-1,10,10,10,10,10,10,10,-1,10,10,10,10,10,10,10,10,10,10,10,10,10,10,-1,10,10,10,10,10,10,10,10,10,10,10,10,10,10,0,10,10,10,10,10,10,10,10,10,10,10,10,10,10,0,10,10,10,10,10,10,10,-1,-1,-1,-1,0,0,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,0,0,-1,-1,-1,-1,100,100,10,10,10,0,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,0,10,10,10,100,100,100,100,10,10,10,-1,30,30,30,30,30,30,-1,-1,0,0,-1,-1,30,30,30,30,30,30,-1,10,10,10,100,100,100,100,10,10,10,-1,30,30,30,30,30,30,-1,100,200,200,100,-1,30,30,30,30,30,30,-1,10,10,10,100,100,100,100,10,10,10,-1,30,30,30,30,30,30,-1,100,200,200,100,-1,30,30,30,30,30,30,-1,10,10,10,100,100,100,100,10,10,10,-1,30,30,30,30,30,30,-1,-1,0,0,-1,-1,30,30,30,30,30,30,-1,10,10,10,100,100,100,100,10,10,10,0,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,0,10,10,10,100,100,-1,-1,-1,-1,0,0,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,0,0,-1,-1,-1,-1,10,10,10,10,10,10,10,0,10,10,10,10,10,10,10,10,10,10,10,10,10,10,0,10,10,10,10,10,10,10,10,10,10,10,10,10,10,-1,10,10,10,10,10,10,10,10,10,10,10,10,10,10,-1,10,10,10,10,10,10,10,-1,-1,0,10,10,10,10,-1,0,0,-1,10,10,10,10,10,10,10,10,-1,0,0,-1,10,10,10,10,0,-1,-1,0,0,0,10,10,10,10,-1,0,0,-1,10,10,10,10,10,10,10,10,-1,0,0,-1,10,10,10,10,0,0,0,0,0,-1,10,10,10,10,0,0,0,-1,0,0,100,200,200,100,0,0,-1,0,0,0,10,10,10,10,-1,0,0,0,0,-1,10,10,10,10,0,0,0,0,0,0,100,100,100,100,0,0,0,0,0,0,10,10,10,10,-1,0,0]).reshape(20,30)
+        }
+                # Player Info
+        self.position = None
         self.score = 0
         self.reward = 0
 
-        # Random Map Objects
-        # Wall = 32
-        # Blank = 76
-        # COPPER = 52
-        # Silver = 52
-        # Gold = 16
-        # DIAMONDS = 8
-        # Black thing = 4
+        
         self.consts =     [-1, 0, 10, 30, 100, 200, 500]
-        self.percentage = np.array([ wall, blank, 52, 52, 16, 8 ,4], dtype=np.float32)
+        self.percentage = np.array([ 32, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
         self.percentage /= self.percentage.sum()  # sum 1
 
 
-    def reset(self, row=12, column=20):
+    def reset(self, player, row=12, column=20, preset=False, random=False ):
         self.row = row
         self.column = column
+        preset_pos = [
+            [0, 0],
+            [0,self.column-1],
+            [self.row-1,0],
+            [self.row-1, self.column-1]
+        ]
 
-        self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)
         self.position = [ random.randint(0,self.row-1), random.randint(0,self.column-1)  ]
-        self.space[tuple(self.position)] = 0
+        if preset:
+            self.space = self.preset_map[self.column]
+            self.position = preset_pos[ random.randint(0,3) ]            
+        else:
+            self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)            
+            self.space[tuple(self.position)] = 0
+
+        # TODO : Randomly add Zeros, Randomly add 500s, ranodmly change position
+        if random:
+            pass
+
+
+
         self.score = 0
         self.reward = 0
 
         self.total_score = self.space.sum()
+
+        # Initialize Player
+        self.player = player
+        self.player.initialize(0, self.column, self.row)
 
         return self.get_state(), self.convert_index(self.position)
 
@@ -45,7 +63,9 @@ class CoinEnv:
     def render(self):
         return render(self.space, self.position)
 
-    def step(self, action):
+    def step(self, action=None):
+        if action==None:
+            action=self.player.move_next(self.get_state(), self.convert_index(self.position))
         
         done = False
         reward = 0 # reward for training
