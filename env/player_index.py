@@ -36,20 +36,19 @@ class NeuralNetwork:
         return score
     
 class Player:
-    def __init__(self, sight=9):
+    def __init__(self):
         self._my_number = None
         self._column = None
         self._row = None
         self._eps = None
-        self._sight = sight
+        self._sight = 9
         self._nn = NeuralNetwork(ckpt)
         self.step:int = None
         self.explored = []
         self.prev_action = None
-        self.state_space = self._sight * self._sight
-        
-        
-        
+
+        # NN Input Size
+        self.state_space = self._sight * self._sight + 1 # index    
 
     def get_name(self) -> str:
 
@@ -67,16 +66,16 @@ class Player:
 
         # Prevent Prev
         self.prev_position_index = None
-
-        # NN Input Size
         
-
     def move_next(self, map: list[int], my_position: int) -> int:
         if self.prev_position_index: map[self.prev_position_index] = -1
         self.prev_position_index = my_position
 
+        if random.random() < self._eps:
+            return random.randint(0, 3)
+        
+        input_data = self.preprocess(map, my_position)        
 
-        input_data = self.preprocess(map, my_position)
         score = self._nn(input_data)# Score's alwyas positive, sum 1, because softmaxed
 
         # preprocess subgrid charactor index 
@@ -89,12 +88,7 @@ class Player:
         index = sorted(range(len(valid_score)), key=lambda k: valid_score[k],reverse=True)
 
 
-        if random.random() < self._eps:
-            return random.randint(0, 3)
-        else:
-            index[0]
-
-
+        
         
 
         return index[0]
@@ -153,4 +147,5 @@ class Player:
         
         player_view = sum(sample_map,[])
 
-        return player_view
+        out = player_view + [index]
+        return out

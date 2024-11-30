@@ -41,12 +41,12 @@ class Player:
         self._column = None
         self._row = None
         self._eps = None
-        self._sight = sight
+        self._sight = 9
         self._nn = NeuralNetwork(ckpt)
         self.step:int = None
         self.explored = []
         self.prev_action = None
-        self.state_space = self._sight * self._sight
+        self.state_space = self._sight * self._sight * 2
         
         
         
@@ -76,7 +76,7 @@ class Player:
         self.prev_position_index = my_position
 
 
-        input_data = self.preprocess(map, my_position)
+        input_data = self.preprocess(map, my_position)        
         score = self._nn(input_data)# Score's alwyas positive, sum 1, because softmaxed
 
         # preprocess subgrid charactor index 
@@ -153,4 +153,6 @@ class Player:
         
         player_view = sum(sample_map,[])
 
-        return player_view
+        out = player_view + player_view
+
+        return out

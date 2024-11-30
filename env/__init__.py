@@ -36,6 +36,9 @@ class CoinEnv:
         self.space[tuple(self.position)] = 0
         self.score = 0
         self.reward = 0
+
+        self.total_score = self.space.sum()
+
         return self.get_state(), self.convert_index(self.position)
 
 
@@ -75,6 +78,9 @@ class CoinEnv:
 
         self.score += score
         self.reward += reward
+
+        if score > self.total_score :            
+            done=True
 
         return self.get_state(), reward, done, self.convert_index(self.position)
 

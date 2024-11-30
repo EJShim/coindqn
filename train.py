@@ -2,10 +2,13 @@ from env import CoinEnv
 import cv2
 import time
 import math
+import importlib
 import random
 import torch
+import json
 import numpy as np
 from pathlib import Path
+
 
 from env.player import Player
 from env.render import render
@@ -59,13 +62,14 @@ if __name__ == "__main__":
     parser.add_argument("--buffer_len", type=int, default = 100000)
     parser.add_argument("--min_buffer_len", type=int, default = 64*100)
     parser.add_argument("--episodes", type=int, default=5000 )
-    parser.add_argument("--print_per_iter", type=int, default=5000)
-    parser.add_argument("--eps_start", type=int, default=0.99)
-    parser.add_argument("--eps_end", type=int, default=0.1)
-    parser.add_argument("--eps_decay", type=float, default=1e-3)
+    parser.add_argument("--print_per_iter", type=int, default=500)
+    parser.add_argument("--eps_start", type=float, default=0.99)
+    parser.add_argument("--eps_end", type=float, default=0.05)
+    parser.add_argument("--eps_decay", type=float, default=0.001)
     parser.add_argument("--max_step", type=int, default=300)
     parser.add_argument("--target_update_period", type=int, default=10000) 
     parser.add_argument("--tau", type=float, default=1e-2)
+    parser.add_argument("--player", type=str, default="player")
     args = parser.parse_args()
 
     # Create Output Dir
@@ -76,15 +80,17 @@ if __name__ == "__main__":
     # Create Environment
     env = CoinEnv()
 
-    player = Player()
-        
-    # Try to Train
+
+    playermodule = importlib.import_module(f"env.{args.player}")
+    player = playermodule.Player()    
 
     
     
 
     writer = SummaryWriter(log_dir=output_dir, comment=exp_name)
-    writer.add_hparams(vars(args), {})
+    with open(output_dir.joinpath("args.json"), "w") as f:
+        json.dump(vars(args), f, indent=4)
+
 
     # Create Q functions
     Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
@@ -161,13 +167,13 @@ if __name__ == "__main__":
         writer.add_scalar("output/Reward", env.reward, i)
         writer.add_scalar("train/Loss", loss, i)
         writer.add_scalar("train/Epsilon", epsilon, i)
-        print(f"episode {i}, score {env.score}, reward {env.reward}")
+        print(f"{exp_name} : episode {i}, score {env.score}, reward {env.reward}")
 
         epsilon = max(args.eps_end, epsilon * (1.0-args.eps_decay)) #Linear annealing
 
         # Save
-        if i % args.print_per_iter == 0 and i!=0 or i == args.episodes-1:
-            save_path = output_dir.joinpath(f"eps_{i}.pth")
+        if i % (args.print_per_iter-1) == 0 and i!=0 or i == args.episodes-1:
+            save_path = output_dir.joinpath(f"eps_{i+1}.pth")
             save_model(Q, save_path)
 
             

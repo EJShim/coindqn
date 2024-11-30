@@ -1,22 +1,30 @@
 import cv2
 import time
 from env import CoinEnv
-from env.player import Player
-from env.render import render
-import numpy as np
+# from env import player
+# from env.render import render
+import argparse
+import importlib
 # from agents.v1 import Player
 
 
 if __name__ == "__main__":
-    env = CoinEnv(wall=15)
 
-    player = Player()
-    # player._sight = 21
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--wall", type=int, default=15)
+    parser.add_argument("--player", type=str, default="player")
+    args  = parser.parse_args()
+
+    env = CoinEnv(wall=args.wall)
+
+
+    playermodule = importlib.import_module(f"env.{args.player}")
+    player = playermodule.Player()
+
     player.initialize(0, env.column, env.row)
 
     cv2.namedWindow("render", cv2.WINDOW_NORMAL)
-    cv2.namedWindow("player", cv2.WINDOW_NORMAL)
-
+    # cv2.namedWindow("player", cv2.WINDOW_NORMAL)
 
 
     space, position_index = env.reset()        
