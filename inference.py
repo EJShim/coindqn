@@ -38,8 +38,10 @@ if __name__ == "__main__":
 
         screen = env.render()
         # charactor_view = render( np.array(player.firstperson_view(space, position_index)), [player._sight//2, player._sight//2])
-        cv2.namedWindow("render", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("render", int(env.column*20), int(env.row*20))
+        # cv2.namedWindow("render", cv2.WINDOW_NORMAL)
+        # cv2.resizeWindow("render", )
+
+        screen = cv2.resize(screen, (int(env.column*20), int(env.row*20)), interpolation=cv2.INTER_NEAREST_EXACT)
         # cv2.resizeWindow("player", 256, 256)
 
         cv2.imshow("render", screen)

@@ -53,7 +53,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "Elmo V6.0"
+        return "quadn"
 
     def initialize(self, my_number: int, column: int, row: int):
         
@@ -151,7 +151,6 @@ class Player:
                 value = space[i][j]
                 if value <= 0 : continue
                 total += value
-
 
                 if i<=position[0] and j<=position[1]:
                     top_left += value
