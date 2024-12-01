@@ -20,8 +20,7 @@ class CoinEnv:
 
         
         self.consts =     [-1, 0, 10, 30, 100, 200, 500]
-        self.percentage = np.array([ 32, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
-        self.percentage /= self.percentage.sum()  # sum 1
+        
 
 
     def reset(self, player, row=12, column=20, preset=False, random_state=False ):
@@ -39,7 +38,14 @@ class CoinEnv:
             self.space = self.preset_map[self.column]
             self.position = preset_pos[ random.randint(0,3) ]            
         else:
-            self.space = np.random.choice(self.consts, (self.row, self.column), p=self.percentage)            
+            # percentage = np.array([ 32, 76, 52, 52, 16, 8 ,4], dtype=np.float32)
+            unique, percentage = np.unique(self.preset_map[self.column], return_counts=True)
+            percentage = list(percentage)
+            percentage.append(random.randint(0, 10))            
+            percentage = np.array(percentage, dtype=float)
+            percentage /= percentage.sum()  # sum 1
+            
+            self.space = np.random.choice(self.consts, (self.row, self.column), p=percentage)            
             self.space[tuple(self.position)] = 0
 
         # TODO : Randomly add Zeros, Randomly add 500s, ranodmly change position
