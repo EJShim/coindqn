@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--wall", type=int, default=15)
     parser.add_argument("--preset", action='store_false')
-    parser.add_argument("--player", type=str, default="player")
+    parser.add_argument("--player", type=str, default="player_stepscore")
     args  = parser.parse_args()
 
 
