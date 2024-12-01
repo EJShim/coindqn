@@ -9,7 +9,7 @@ import json
 import numpy as np
 from pathlib import Path
 
-
+import models
 from env.player import Player
 from env.render import render
 from utils import ReplayBuffer, train, save_model
@@ -22,31 +22,6 @@ device = torch.device("cpu")
 if torch.cuda.is_available():
     device = torch.device("cuda")
 
-class Q_net(torch.nn.Module):
-    def __init__(self, state_space, action_space):
-        super(Q_net, self).__init__()
-
-        self.action_space = action_space
-
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(state_space, 256),            
-            torch.nn.ReLU(),
-            torch.nn.Linear(256, 128),
-            torch.nn.ReLU(),
-            torch.nn.Linear(128, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, action_space)
-        )
-    def forward(self, x):        
-        y = self.layers(x)
-        return y    
-
-    def sample_action(self, obs, epsilon):
-        if random.random() < epsilon:
-            return random.randint(0, self.action_space-1)
-        else:
-            y = self.forward(obs)
-            return y.argmax().item()
 
 
 
@@ -70,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--target_update_period", type=int, default=10000) 
     parser.add_argument("--tau", type=float, default=1e-2)
     parser.add_argument("--player", type=str, default="player_stepscore")
+    parser.add_argument("--model", type=str, default="Q_net")
     args = parser.parse_args()
 
     # Create Output Dir
@@ -96,13 +72,14 @@ if __name__ == "__main__":
 
 
     # Create Q functions
-    Q = Q_net(state_space=player.state_space,  action_space=4).to(device)
+    QNet = getattr(models, args.model)
+    Q = QNet(state_space=player.state_space,  action_space=4).to(device)
 
     if args.resume:
         print("Load Checkpoint : ", args.resume)
         Q.load_state_dict(torch.load(args.resume))
 
-    Q_target = Q_net(state_space=player.state_space,  action_space=4).to(device)
+    Q_target = QNet(state_space=player.state_space,  action_space=4).to(device)
     
     Q_target.load_state_dict(Q.state_dict())
     optimizer = torch.optim.Adam(Q.parameters(), lr=args.learning_rate)
