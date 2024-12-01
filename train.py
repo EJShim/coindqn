@@ -117,7 +117,7 @@ if __name__ == "__main__":
     for i in range(args.episodes):
         done = False
         
-        space, position_index = env.reset(player=player, preset=True)
+        space, position_index = env.reset(player=player)
         # player.initialize(0, env.column, env.row)        
         state = player.preprocess(space, position_index) # space : col * row + 1
 

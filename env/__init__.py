@@ -24,7 +24,7 @@ class CoinEnv:
         self.percentage /= self.percentage.sum()  # sum 1
 
 
-    def reset(self, player, row=12, column=20, preset=False, random=False ):
+    def reset(self, player, row=12, column=20, preset=False, random_state=False ):
         self.row = row
         self.column = column
         preset_pos = [
@@ -43,7 +43,7 @@ class CoinEnv:
             self.space[tuple(self.position)] = 0
 
         # TODO : Randomly add Zeros, Randomly add 500s, ranodmly change position
-        if random:
+        if random_state:
             pass
 
 
@@ -51,7 +51,7 @@ class CoinEnv:
         self.score = 0
         self.reward = 0
 
-        self.total_score = self.space.sum()
+        self.total_score = np.sum(self.space[self.space>0])        
 
         # Initialize Player
         self.player = player

@@ -53,7 +53,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "Elmo V7.0"
+        return "Baseline0"
 
     def initialize(self, my_number: int, column: int, row: int):
         

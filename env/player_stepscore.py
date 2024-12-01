@@ -48,22 +48,21 @@ class Player:
         self.prev_action = None
         self.state_space = self._sight * self._sight
         
-        
-        
 
     def get_name(self) -> str:
 
-        return "Baseline"
+        return "Elmo V6.0"
 
     def initialize(self, my_number: int, column: int, row: int):
         
         self._my_number = my_number
         self._column = column
         self._row = row 
-        self._eps = 0.05
+        self._eps = 0.0001
 
         # Check Exploration        
         self.step = 0
+        self.explored = [0] * self._column * self._row
 
         # Prevent Prev
         self.prev_position_index = None
@@ -140,6 +139,18 @@ class Player:
         return sample_map
     
     def preprocess(self, state, index):
+
+        self.step += 1
+        self.explored[index] = self.step
+
+        
+        
+
+        state = [ x+self.step - self.explored[idx] if x != -1 else x for idx,x in enumerate( state) ]
+
+        print(state)
+        # print(state)
+
 
         position = self.index_to_position(index) # This is correct
         map2d = self.make_2d_input_map(state)

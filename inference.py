@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     env.reset(player=player, row=12, column=20, preset=args.preset)        
 
-    for t in range(1000):        
+    for t in range(300):        
 
         # action = player.move_next(space, position_index)        
         space, reward, done, position_index = env.step() 
@@ -39,4 +39,4 @@ if __name__ == "__main__":
         cv2.imshow("render", screen)
         # cv2.imshow("player", charactor_view)
         cv2.waitKey(1)
-        time.sleep(0.1)
+        time.sleep(0.01)
