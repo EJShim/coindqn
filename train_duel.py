@@ -1,7 +1,8 @@
 from env import CoinEnv
+import json
 import cv2
 import time
-import math
+import importlib
 import random
 import torch
 import numpy as np
@@ -92,11 +93,24 @@ class Dual_Q_Net(torch.nn.Module):
 
 if __name__ == "__main__":
     torch.manual_seed(0)
-
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--batch_size", type=int, default = 64)
+    parser.add_argument("--learning_rate", type=float, default = 1e-3) 
+    parser.add_argument("--buffer_len", type=int, default = 100000)
+    parser.add_argument("--min_buffer_len", type=int, default = 64*100)
+    parser.add_argument("--episodes", type=int, default=5000 )
+    parser.add_argument("--print_per_iter", type=int, default=500)
+    parser.add_argument("--eps_start", type=float, default=0.99)
+    parser.add_argument("--eps_end", type=float, default=0.0001)
+    parser.add_argument("--eps_decay", type=float, default=0.005)
+    parser.add_argument("--max_step", type=int, default=300)
+    parser.add_argument("--target_update_period", type=int, default=10000) 
+    parser.add_argument("--tau", type=float, default=1e-2)
+    parser.add_argument("--player", type=str, default="player_stepscore")
+    parser.add_argument("--model", type=str, default="Q_net")
     args = parser.parse_args()
 
     # Create Output Dir
@@ -106,31 +120,18 @@ if __name__ == "__main__":
 
     # Create Environment
     env = CoinEnv()
+    playermodule = importlib.import_module(f"env.{args.player}")
+    player = playermodule.Player()    
 
-    player = Player()
-        
-    # Try to Train
-    # Set parameters
-    batch_size = 64
-    learning_rate = 1e-3
-    buffer_len = int(100000)
-    min_buffer_len = batch_size*100
-    episodes = 5000
-    print_per_iter = 100
-    target_update_period = 1000
-    eps_start = 0.9
-    eps_end = 0.001
-    eps_decay = 0.995
-    tau = 1e-2
-    max_step = 100
-
-    # Create Q functions
-    # state_space = env.column*env.row
-
-
+    writer = SummaryWriter(log_dir=output_dir, comment=exp_name)
+    with open(output_dir.joinpath("args.json"), "w") as f:
+        argsjson = {}
+        for key,val in vars(args).items():
+            argsjson[key] = str(val)
+        json.dump(argsjson, f, indent=4)
+    
 
     Q = Dual_Q_Net(state_space=player.state_space,  action_space=4).to(device)
-
     if args.resume:
         print("Load Checkpoint : ", args.resume)
         Q.load_state_dict(torch.load(args.resume))
@@ -139,57 +140,54 @@ if __name__ == "__main__":
     Q_target.load_state_dict(Q.state_dict())
     for p in Q_target.parameters(): p.requires_grad = False
 
-    optimizer = torch.optim.Adam(Q.parameters(), lr=learning_rate, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[1500], gamma=0.001)
+    optimizer = torch.optim.Adam(Q.parameters(), lr=args.learning_rate)
 
     # Create Replay buffer
-    replay_buffer = ReplayBuffer(player.state_space, size=buffer_len, batch_size=batch_size)
+    replay_buffer = ReplayBuffer(player.state_space, size=args.buffer_len, batch_size=args.batch_size)
 
     # Start Training
-    epsilon = eps_start
+    epsilon = args.eps_start
 
-
-
-    writer = SummaryWriter(log_dir=output_dir)
-    
-    for i in range(episodes):
+    step = 0
+    for i in range(args.episodes):
         done = False
         
-        space, position_index = env.reset()
-        player.initialize(0, env.column, env.row)        
-        state = player.preprocess(space, position_index) # space : col * row + 1
+        state = env.reset(player=player)
+
 
         Q.train()
         Q_target.train()
-        for t in range(max_step):
+
+        loss = 0
+        for t in range(args.max_step):
+            step += 1
 
             # Take Action
             state_tensor = torch.tensor(state, dtype=torch.float32)
             action = Q.sample_action(state_tensor, epsilon)
 
             # Next Step
-            space, reward, done, position_index = env.step(action)            
-            state_prime = player.preprocess(space, position_index)
+            state_prime, reward, done = env.step(action)            
+
 
             # Check Done State
-            done = (t >= max_step) or done
+            done = (t >= args.max_step) or done
             done_mask = 0.0 if done else 1.0
             
             replay_buffer.put(np.array(state), action, reward, np.array(state_prime), done_mask)
 
             # Update State
             state = state_prime
+            
 
-            loss = 0
-
-            if len(replay_buffer) >= min_buffer_len:
-                loss = train(Q, Q_target, replay_buffer, device, optimizer=optimizer)
+            if len(replay_buffer) >= args.min_buffer_len:
+                loss += train(Q, Q_target, replay_buffer, device, optimizer=optimizer)
                 # scheduler.step()
 
-                if (t+1) % target_update_period == 0:
+                if step % args.target_update_period == 0:
                     # Q_target.load_state_dict(Q.state_dict()) <- naive update
                     for target_param, local_param in zip(Q_target.parameters(), Q.parameters()): #<- soft update
-                            target_param.data.copy_(tau*local_param.data + (1.0 - tau)*target_param.data)
+                            target_param.data.copy_(args.tau*local_param.data + (1.0 - args.tau)*target_param.data)
                 
             if done:
                 break
@@ -202,18 +200,18 @@ if __name__ == "__main__":
             # time.sleep(0.1)
 
         # Output
-        writer.add_scalar("Score", env.score, i)
-        writer.add_scalar("Reward", env.reward, i)
-        writer.add_scalar("Loss", loss, i)
-        print(f"episode {i}, score {env.score}, reward {env.reward} ")
+        writer.add_scalar("output/Score", env.score, i)
+        writer.add_scalar("output/Reward", env.reward, i)
+        writer.add_scalar("train/Loss", loss, i)
+        writer.add_scalar("train/Epsilon", epsilon, i)
+        print(f"{exp_name} : episode {i}, score {env.score}, reward {env.reward}")
 
 
-        epsilon = max(eps_end, epsilon * eps_decay) #Linear annealing
+        epsilon = max(args.eps_end, epsilon * args.eps_decay) #Linear annealing
 
         # TODO : Save
-        
-        if i % print_per_iter == 0 and i!=0 or i == episodes-1:
-            save_path = output_dir.joinpath(f"eps_{i}.pth")
+        if i % (args.print_per_iter+1) == 0 and i!=0 or i == args.episodes-1:
+            save_path = output_dir.joinpath(f"eps_{i+1}.pth")
             save_model(Q, save_path)
 
             
