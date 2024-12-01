@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--batch_size", type=int, default = 64)
-    parser.add_argument("--learning_rate", type=float, default = 1e-3) 
+    parser.add_argument("--learning_rate", type=float, default = 1e-4) 
     parser.add_argument("--buffer_len", type=int, default = 100000)
     parser.add_argument("--min_buffer_len", type=int, default = 64*100)
     parser.add_argument("--episodes", type=int, default=5000 )
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_step", type=int, default=300)
     parser.add_argument("--target_update_period", type=int, default=10000) 
     parser.add_argument("--tau", type=float, default=1e-2)
-    parser.add_argument("--player", type=str, default="player_stepscore")
+    parser.add_argument("--player", type=str, default="player_stepscore_duel")
     parser.add_argument("--model", type=str, default="Q_net")
     args = parser.parse_args()
 
@@ -193,7 +193,7 @@ if __name__ == "__main__":
                 break
         
             # Animation
-            if args.render:
+            if args.render:     
                 screen = env.render()
                 cv2.imshow("render", screen)
                 cv2.waitKey(1)

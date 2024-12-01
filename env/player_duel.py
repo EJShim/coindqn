@@ -21,15 +21,25 @@ def argmax(x):
 class DuelNeuralNetwork:
     def __init__(self, ckpt):        
         self.ckpt = ckpt
-        self.num_layers = len(self.ckpt.keys()) // 2
+
+        self.num_layers = 0
+        for key, val in ckpt.items():            
+            names = key.split(".")
+            if names[0] == "layers": self.num_layers = int(names[1]) // 2+1
+        
 
     def __call__(self, x):
         y = x
-        for i in range(self.num_layers):
-            relu = not i==(self.num_layers-1)
-            y = linear_layer(self.ckpt[f"layers.{i*2}.weight"], y, self.ckpt[f"layers.{i*2}.bias"], relu=relu)
-        
-        score = [ math.exp(x) for x in y ]
+        for i in range(self.num_layers):            
+            y = linear_layer(self.ckpt[f"layers.{i*2}.weight"], y, self.ckpt[f"layers.{i*2}.bias"], relu=True)        
+        Adv = linear_layer(self.ckpt["A.weight"], y, self.ckpt["A.bias"], relu=False)
+
+        V = linear_layer(self.ckpt["V.weight"], y, self.ckpt["V.bias"], relu=False)
+        V = V[0]
+
+        Q = [V + (x - sum(Adv)/4) for x in Adv]
+                
+        score = [ abs(x) for x in Q ]
         score_sum = sum(score)
         score = [ x / score_sum for x in score ]
 
