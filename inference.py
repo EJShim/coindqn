@@ -24,19 +24,19 @@ if __name__ == "__main__":
 
     playermodule = importlib.import_module(f"env.{args.player}")
     player = playermodule.Player()    
-
-
+    
     env.reset(player=player, row=12, column=20, preset=args.preset)        
 
-    for t in range(300):        
+
+    for t in range(500):        
 
         # action = player.move_next(space, position_index)        
-        space, reward, done, position_index = env.step() 
+        env.step() 
 
         screen = env.render()
         screen = cv2.resize(screen, (int(env.column*20), int(env.row*20)), interpolation=cv2.INTER_NEAREST_EXACT)        
 
         cv2.imshow("render", screen)
         # cv2.imshow("player", charactor_view)
-        cv2.waitKey(1)
+        cv2.waitKey(int(bool(t)))
         time.sleep(0.01)

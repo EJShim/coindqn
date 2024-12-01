@@ -57,8 +57,9 @@ class CoinEnv:
         self.player = player
         self.player.initialize(0, self.column, self.row)
 
-        return self.get_state(), self.convert_index(self.position)
+        self.state = self.player.preprocess(self.get_state(), self.convert_index(self.position))
 
+        return self.state
 
     def render(self):
         return render(self.space, self.position)
@@ -71,6 +72,11 @@ class CoinEnv:
         reward = 0 # reward for training
         score = 0 # just coin score
 
+
+        # Get Reward from player
+        reward += self.player.get_move_candidates(self.state)[action]
+
+        # Update Action Position
         pos = self.position
         if action == 0:
             pos = [pos[0], pos[1]-1]            
@@ -89,20 +95,20 @@ class CoinEnv:
             # Update Position
             self.position = pos
 
-            # Update Score
+            # Update Score from env
             score += self.space[ tuple(self.position) ] # coin reward      
-            self.space[ tuple(self.position) ] = 0
-            reward += score
+            self.space[ tuple(self.position) ] = 0            
         
         # reward -= self.time_step*0.1
-
         self.score += score
         self.reward += reward
 
         if score > self.total_score :            
             done=True
 
-        return self.get_state(), reward, done, self.convert_index(self.position)
+        self.state = self.player.preprocess(self.get_state(), self.convert_index(self.position))
+
+        return self.state, reward, done
 
     def invalid_position(self, position):        
         if position[0] < 0 or position[0] > self.row-1:

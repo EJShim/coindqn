@@ -139,7 +139,7 @@ class Player:
 
         return sample_map
     
-    def preprocess(self, state, index):
+    def preprocess(self, state, index):        
 
         position = self.index_to_position(index) # This is correct
         map2d = self.make_2d_input_map(state)

@@ -117,9 +117,7 @@ if __name__ == "__main__":
     for i in range(args.episodes):
         done = False
         
-        space, position_index = env.reset(player=player)
-        # player.initialize(0, env.column, env.row)        
-        state = player.preprocess(space, position_index) # space : col * row + 1
+        state = env.reset(player=player)
 
         Q.train()
         Q_target.train()
@@ -132,8 +130,7 @@ if __name__ == "__main__":
             action = Q.sample_action(state_tensor, epsilon)
 
             # Next Step
-            space, reward, done, position_index = env.step(action)            
-            state_prime = player.preprocess(space, position_index)
+            state_prime, reward, done = env.step(action)            
 
             # Check Done State
             done = (t >= args.max_step) or done
