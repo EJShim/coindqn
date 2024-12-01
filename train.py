@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_step", type=int, default=300)
     parser.add_argument("--target_update_period", type=int, default=10000) 
     parser.add_argument("--tau", type=float, default=1e-2)
-    parser.add_argument("--player", type=str, default="player")
+    parser.add_argument("--player", type=str, default="player_stepscore")
     args = parser.parse_args()
 
     # Create Output Dir
@@ -89,7 +89,10 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(log_dir=output_dir, comment=exp_name)
     with open(output_dir.joinpath("args.json"), "w") as f:
-        json.dump(vars(args), f, indent=4)
+        argsjson = {}
+        for key,val in vars(args).items():
+            argsjson[key] = str(val)
+        json.dump(argsjson, f, indent=4)
 
 
     # Create Q functions
