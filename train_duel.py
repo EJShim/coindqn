@@ -106,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--eps_start", type=float, default=0.99)
     parser.add_argument("--eps_end", type=float, default=0.0001)
     parser.add_argument("--eps_decay", type=float, default=0.005)
-    parser.add_argument("--max_step", type=int, default=300)
+    parser.add_argument("--max_step", type=int, default=200)
     parser.add_argument("--target_update_period", type=int, default=10000) 
     parser.add_argument("--tau", type=float, default=1e-2)
     parser.add_argument("--player", type=str, default="player_stepscore_duel")

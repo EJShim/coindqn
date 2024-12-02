@@ -25,7 +25,7 @@ if __name__ == "__main__":
     playermodule = importlib.import_module(f"env.{args.player}")
     player = playermodule.Player()    
     
-    env.reset(player=player, row=20, column=30, preset=args.preset)        
+    env.reset(player=player, row=12, column=20, preset=args.preset)        
 
 
     for t in range(500):        

@@ -106,10 +106,10 @@ class Player:
     
     def make_2d_input_map(self, input_map):
         # input to 2d amp
-        result = [[0] * self._column for _ in range(self._row)]
+        result = [[0] * self._row for _ in range(self._column)]
 
-        for r in range(self._row):
-            result[r] = input_map[r*self._column:r*self._column+self._column ]
+        # for r in range(self._row):
+        #     result[r] = input_map[r*self._column:r*self._column+self._column ]
 
         return result
 
