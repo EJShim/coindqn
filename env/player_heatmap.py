@@ -71,6 +71,7 @@ class Player:
 
         # Score Heatmap
         self.heatmap = None
+        self.input_data = None
         self.prev_state = None
         
 
@@ -79,8 +80,7 @@ class Player:
         if self.prev_position_index: map[self.prev_position_index] = -1
         self.prev_position_index = my_position
 
-
-        self.input_data = self.preprocess(map, my_position)
+        self.preprocess(map, my_position)
         score = self._nn(self.input_data)# Score's alwyas positive, sum 1, because softmaxed
 
         # This is heatmap score
@@ -188,9 +188,9 @@ class Player:
 
         sample_map = self.sample_pad_2d_input_map(self.to_2d_list(heatmap), position)        
         
-        player_view = sum(sample_map,[])
+        self.input_data = sum(sample_map,[])
 
-        return player_view
+        return self.input_data
 
 
     def initialize_heatmap(self, grid):
