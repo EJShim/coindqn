@@ -80,11 +80,11 @@ class Player:
         self.prev_position_index = my_position
 
 
-        input_data = self.preprocess(map, my_position)
-        score = self._nn(input_data)# Score's alwyas positive, sum 1, because softmaxed
+        self.input_data = self.preprocess(map, my_position)
+        score = self._nn(self.input_data)# Score's alwyas positive, sum 1, because softmaxed
 
         # This is heatmap score
-        move_candidates = self.get_move_candidates(input_data)
+        move_candidates = self.get_move_candidates()
         
         # valid_score = [bool(x+1)*y for x,y in zip(move_candidates, score)]        
         valid_score = [(x+1)*y for x,y in zip(move_candidates, score)]                
@@ -93,12 +93,15 @@ class Player:
         # Get Candidate
         index = sorted(range(len(valid_score)), key=lambda k: valid_score[k],reverse=True)
 
-
-        
-
         return index[0]
+
+    def get_reward(self, action):
+        next_candidates = self.get_move_candidates()
+
+        return next_candidates[action] * 10
     
-    def get_move_candidates(self, cropped_sight):
+    def get_move_candidates(self):
+        cropped_sight = self.input_data
         center = (self._sight * self._sight) // 2
         return [ 
             cropped_sight[center - 1],
@@ -155,11 +158,8 @@ class Player:
         return sample_map
     
     def preprocess(self, state, index):        
-        
-
         if state[index] == -1 : state[index] = 0
         
-
         position = self.index_to_position(index) # This is correct
         map2d = self.to_2d_list(state)
 
@@ -172,7 +172,7 @@ class Player:
             for idx, value, in enumerate(changed):
                 if abs(value) >1 :                     
                     self.update_heatmap(self.heatmap, map2d, idx, value )
-            
+
         heatmap = sum(self.heatmap, [])        
         heatmap_min = min(heatmap)
         heatmap_max = max(heatmap)                

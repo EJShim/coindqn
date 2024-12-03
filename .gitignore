@@ -2,3 +2,4 @@ output
 play_*
 **/__pycache__/
 .DS_Store
+exps/

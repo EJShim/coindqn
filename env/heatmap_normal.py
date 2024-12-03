@@ -47,6 +47,7 @@ class Player:
         
         map2d = self.to_2d_list(map)
 
+        
         # Calculate Heatmap
         if self.heatmap == None:
             self.heatmap = self.initialize_heatmap(map2d)            
@@ -79,13 +80,10 @@ class Player:
         # Get Candidate
         index = sorted(range(len(scores)), key=lambda k: scores[k],reverse=True)
 
-
-        if random.random() < self._eps:
-            return random.randint(0, 3)
-        else:
-            index[0]        
-
         return index[0]
+    
+    def get_reward(self, action):
+        return 0
     
     def get_move_candidates(self, cropped_sight):
         center = (self._sight * self._sight) // 2
@@ -144,7 +142,6 @@ class Player:
         return sample_map
     
     def preprocess(self, state, index):        
-        
 
         if state[index] == -1 : state[index] = 0
         

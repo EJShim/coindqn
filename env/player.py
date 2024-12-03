@@ -128,6 +128,9 @@ class Player:
             for i in range(position[0],position[0]+self._sight)]
 
         return state
+    
+    def get_reward(self, action):
+        return 0
 
     def index_to_position(self, index):
         return [ index // self._column, index % self._column]
