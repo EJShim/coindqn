@@ -90,7 +90,7 @@ class Player:
         
         # valid_score = [bool(x+1)*y for x,y in zip(move_candidates, score)]        
         valid_score = [(x+1)*y for x,y in zip(move_candidates, score)]                
-        # valid_score = move_candidates
+        valid_score = move_candidates
 
         # Get Candidate
         index = sorted(range(len(valid_score)), key=lambda k: valid_score[k],reverse=True)
@@ -100,7 +100,12 @@ class Player:
     def get_reward(self, action):
         next_candidates = self.get_move_candidates()
 
-        return next_candidates[action] * 10
+        reward = next_candidates[action]
+        if reward < 0:
+            reward *= 10
+        
+
+        return reward
     
     def get_move_candidates(self):
         cropped_sight = self.input_data
@@ -176,15 +181,12 @@ class Player:
                     self.update_heatmap(self.heatmap, map2d, idx, value )
 
         heatmap = sum(self.heatmap, [])        
-        heatmap_min = min(heatmap)
-        heatmap_max = max(heatmap)                
-        heatmap = [
-            (x-heatmap_min)/(heatmap_max-heatmap_min) for x in heatmap
-        ]            
         
         heatmap = [
             x + h  if x != -1 else x  for (x,h)  in zip(state, heatmap)
         ]
+
+        self.debug = heatmap
         
         self.prev_state = state
 

@@ -40,7 +40,6 @@ def update_policy(policy, optimizer):
 
     rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
     
-    
     # Calculate loss
     loss = (torch.sum(torch.mul(policy.policy_history, torch.autograd.Variable(rewards)).mul(-1), -1))
     
