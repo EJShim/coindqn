@@ -55,3 +55,39 @@ class Q_net512(torch.nn.Module):
         else:
             y = self.forward(obs)
             return y.argmax().item()
+        
+
+
+class Policy(torch.nn.Module):
+    def __init__(self, state_space, action_space, gamma=0.99):
+        super(Policy, self).__init__()
+
+        self.state_space = state_space
+        self.action_space = action_space
+        
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(state_space, 256),                    
+            torch.nn.ReLU(),
+            torch.nn.Linear(256, 128),            
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 64),            
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, action_space),            
+            torch.nn.Softmax()
+        )
+
+
+        # Episode policy and reward history 
+        self.policy_history = torch.autograd.Variable(torch.Tensor()) 
+        self.reward_episode = []
+        # Overall reward and loss history
+        self.reward_history = []
+        self.loss_history = []
+
+        self.gamma = 0.99
+
+
+    def forward(self, x):        
+        y = self.layers(x)
+
+        return y

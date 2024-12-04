@@ -130,7 +130,9 @@ class Player:
         return state
     
     def get_reward(self, action):
-        return 0
+        next_step = self.get_move_candidates(self.input_daata)
+        
+        return next_step[action] * 10
 
     def index_to_position(self, index):
         return [ index // self._column, index % self._column]
@@ -151,6 +153,6 @@ class Player:
         # Set Player Value -2
         sample_map[ self._sight//2][self._sight//2 ] = -2
         
-        player_view = sum(sample_map,[])
+        self.input_daata = sum(sample_map,[])
 
-        return player_view
+        return self.input_daata
