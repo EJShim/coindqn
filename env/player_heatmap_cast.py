@@ -1,6 +1,5 @@
 import math
-import random
-
+from collections import deque
 
 ckpt ={}
 
@@ -105,17 +104,17 @@ class Player:
     def preprocess(self, state, index):        
         if state[index] == -1 : state[index] = 0
                 
-        map2d = self.to_2d_list(state)
+        self.grid = self.to_2d_list(state)
 
         # Calculate Heatmap
         if self.heatmap == None:
-            self.heatmap = self.initialize_heatmap(map2d)            
-
-        else:            
+            self.heatmap = [[0.0 for _ in range(self._column)] for _ in range(self._row)]
+            self.initialize_heatmap()           
+        else:               
             changed = [ x-y for (x, y) in zip(state, self.prev_state) ]
             for idx, value, in enumerate(changed):
                 if abs(value) >1 :                     
-                    self.update_heatmap(self.heatmap, map2d, idx, value )
+                    self._spread_heat(idx, -value)        
 
         heatmap = sum(self.heatmap, [])        
         
@@ -131,7 +130,7 @@ class Player:
         return self.input_data
 
 
-    def initialize_heatmap(self, grid):
+    def initialize_heatmap(self):
         """
         Initialize the global heatmap for the entire grid.
 
@@ -142,51 +141,38 @@ class Player:
         Returns:
             list of list: Heatmap as a 2D list of the same size as the input grid.
         """
-        n = len(grid)
-        m = len(grid[0])
-        heatmap = [[0.0 for _ in range(m)] for _ in range(n)]
-
+        n = len(self.grid)
+        m = len(self.grid[0])
+        
         for i in range(n):
             for j in range(m):
-                if grid[i][j] > 0:  # Only process cells with coins
-                    value = grid[i][j]
+                if self.grid[i][j] > 0:  # Only process cells with coins
+                    value = self.grid[i][j]
                     coin_index = i*self._column + j
-                    self.update_heatmap(heatmap, grid, coin_index, value)        
-        return heatmap
+                    self._spread_heat(coin_index, value)
+                    # self.update_heatmap(heatmap, grid, coin_index, value)                
+
+    def _spread_heat(self, coin_index, value):        
+        """Spread heat from a coin using BFS."""
 
 
+        y, x = self.index_to_position(coin_index)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        visited = [[False] * self._column for _ in range(self._row)]
+        queue = deque([(x, y, 0)])  # (x, y, remaining_value)        
+        while queue:
+            cx, cy, distance = queue.popleft()            
+            if visited[cy][cx]:
+                continue
+            visited[cy][cx] = True
+            
+            score = value * math.exp(-distance * self.alpha)
 
-    def update_heatmap(self, heatmap, grid, coin_index, coin_value):
-        """
-        Update the global heatmap based on the change in a single coin.
-
-        Args:
-            heatmap (list of list): The current heatmap to be updated.
-            grid (list of list): The grid with coin values.
-            coin_x (int): X-coordinate of the coin.
-            coin_y (int): Y-coordinate of the coin.
-            coin_value (float): The value of the coin being added or removed.
-            alpha (float): Decay factor for the distance.
-            add (bool): If True, add the coin's contribution; if False, remove it.
-
-        Returns:
-            None: Updates the heatmap in place.
-        """
-        coin_x, coin_y = self.index_to_position(coin_index)
-
-        n = len(grid)
-        m = len(grid[0])
-
-        
-        alpha = self.alpha        
-        # Threshold to limit the range of update
-        max_distance = -math.log(0.01) / alpha
-
-        for x in range(max(0, int(coin_x - max_distance)), min(n, int(coin_x + max_distance) + 1)):
-            for y in range(max(0, int(coin_y - max_distance)), min(m, int(coin_y + max_distance) + 1)):
-                distance = math.sqrt((x - coin_x) ** 2 + (y - coin_y) ** 2)
-                if distance <= max_distance:
-                    heatmap[x][y] += coin_value * math.exp(-alpha * distance)
-
-
-    
+            self.heatmap[cy][cx] += score
+            for dx, dy in directions:
+                nx, ny = cx + dx, cy + dy                
+                
+                if 0 <= nx < self._column and 0 <= ny < self._row:
+                    # print(nx, ny, len(self.grid), len(self.grid[0]))                    
+                    if self.grid[ny][nx] != -1 and not visited[ny][nx]:
+                        queue.append((nx, ny, distance+1))  # Decrease value as it spreads

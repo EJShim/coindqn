@@ -3,7 +3,7 @@ from env import CoinEnv
 import numpy as np
 from itertools import count
 from collections import namedtuple
-from env.player_heatmap_nn import Player
+from env.player_heatmap_normalize import Player
 
 import torch
 import torch.nn as nn

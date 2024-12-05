@@ -1,29 +1,28 @@
 import math
-import random
 
-
-ckpt ={}
 
     
 class Player:
     def __init__(self):
         self._my_number = None
         self._column = None
-        self._row = None        
+        self._row = None
         
-
-        self.heatmap = None        
+        self.heatmap = None
         self.alpha = 0.2
+        
+    
 
     def get_name(self) -> str:
 
-        return "HeatmapFollower_Normalize"
+        return "heat_norm"
 
     def initialize(self, my_number: int, column: int, row: int):
         
         self._my_number = my_number
         self._column = column
-        self._row = row         
+        self._row = row     
+        
 
         # Prevent Prev
         self.prev_position_index = None
@@ -39,25 +38,22 @@ class Player:
         if self.prev_position_index: map[self.prev_position_index] = -1
         self.prev_position_index = my_position
 
-        self.preprocess(map, my_position)
+        self.preprocess(map, my_position)        
 
         # This is heatmap score
-        heatmap_score = self.get_move_candidates()
-        
+        move_candidates = self.get_move_candidates()
+                    
+        valid_score = move_candidates
+
         # Get Candidate
-        index = sorted(range(len(heatmap_score)), key=lambda k: heatmap_score[k],reverse=True)
+        index = sorted(range(len(valid_score)), key=lambda k: valid_score[k],reverse=True)
 
         return index[0]
 
     def get_reward(self, action):
         next_candidates = self.get_move_candidates()
 
-        reward = next_candidates[action]
-        if reward < 0:
-            reward *= 10
-        
-
-        return reward
+        return next_candidates[action] * 10
     
     def get_move_candidates(self):
         heatmap = self.input_data   
@@ -98,9 +94,10 @@ class Player:
 
         # Create the 2D list
         return [flat_list[i * m:(i + 1) * m] for i in range(n)]
+    
 
     def index_to_position(self, index):
-        return [ index // self._column, index % self._column]
+        return [ index // self._column, index % self._column]    
     
     def preprocess(self, state, index):        
         if state[index] == -1 : state[index] = 0
@@ -118,15 +115,20 @@ class Player:
                     self.update_heatmap(self.heatmap, map2d, idx, value )
 
         heatmap = sum(self.heatmap, [])        
+        heatmap_min = min(heatmap)
+        heatmap_max = max(heatmap)                
+        heatmap = [
+            (x-heatmap_min)/(heatmap_max-heatmap_min) for x in heatmap
+        ]            
         
         heatmap = [
             x + h  if x != -1 else x  for (x,h)  in zip(state, heatmap)
         ]
-
         self.debug = heatmap
         
         self.prev_state = state
-        self.input_data = heatmap # sum(sample_map,[])
+        
+        self.input_data = heatmap
 
         return self.input_data
 
@@ -177,16 +179,16 @@ class Player:
         n = len(grid)
         m = len(grid[0])
 
-        
-        alpha = self.alpha        
+        alpha = self.alpha
+
         # Threshold to limit the range of update
         max_distance = -math.log(0.01) / alpha
 
         for x in range(max(0, int(coin_x - max_distance)), min(n, int(coin_x + max_distance) + 1)):
             for y in range(max(0, int(coin_y - max_distance)), min(m, int(coin_y + max_distance) + 1)):
                 distance = math.sqrt((x - coin_x) ** 2 + (y - coin_y) ** 2)
-                if distance <= max_distance:
-                    heatmap[x][y] += coin_value * math.exp(-alpha * distance)
 
+                if distance <= max_distance:
+                    heatmap[x][y] += (coin_value*2) * math.exp(-alpha * distance)
 
     

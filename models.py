@@ -28,6 +28,35 @@ class Q_net(torch.nn.Module):
             return y.argmax().item()
 
 
+
+class Greedy_Q_net(torch.nn.Module):
+    def __init__(self, state_space, action_space):
+        super(Greedy_Q_net, self).__init__()
+
+        self.action_space = action_space
+
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(state_space, 256),            
+            torch.nn.ReLU(),
+            torch.nn.Linear(256, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, action_space)
+        )
+    def forward(self, x):        
+        y = self.layers(x)
+        return y    
+
+    def sample_action(self, obs, epsilon):
+        if True:
+            heatmap_score = obs[[39, 31, 41, 39]]            
+            return heatmap_score.argmax().item()
+        else:
+            y = self.forward(obs)
+            return y.argmax().item()
+
+
 class Q_net512(torch.nn.Module):
     def __init__(self, state_space, action_space):
         super(Q_net512, self).__init__()

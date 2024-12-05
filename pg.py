@@ -134,7 +134,6 @@ if __name__ == "__main__":
 
             # Next Step
             state, reward, done = env.step(action)            
-            done = (t >= args.max_step) or done
             
             # Append Reward
             policy.reward_episode.append(reward)

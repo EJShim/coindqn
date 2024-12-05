@@ -12,7 +12,9 @@ class Player:
         self._row = None        
         
 
-        self.heatmap = None        
+        self.heatmap = None
+        self.explored = []
+        self.step = 0
         self.alpha = 0.2
 
     def get_name(self) -> str:
@@ -32,9 +34,16 @@ class Player:
         self.heatmap = None
         self.input_data = None
         self.prev_state = None
+
+        self.step = 1
+        self.explored = [1] * column * row
         
 
     def move_next(self, map: list[int], my_position: int) -> int:        
+
+        # Update Exloration info
+        self.explored[my_position] += 1
+        self.step += 1
 
         if self.prev_position_index: map[self.prev_position_index] = -1
         self.prev_position_index = my_position
@@ -46,6 +55,7 @@ class Player:
         
         # Get Candidate
         index = sorted(range(len(heatmap_score)), key=lambda k: heatmap_score[k],reverse=True)
+
 
         return index[0]
 
@@ -118,9 +128,9 @@ class Player:
                     self.update_heatmap(self.heatmap, map2d, idx, value )
 
         heatmap = sum(self.heatmap, [])        
-        
+                
         heatmap = [
-            x + h  if x != -1 else x  for (x,h)  in zip(state, heatmap)
+            x+h*(self.step/e/e)  if x != -1 else x  for (x,h,e)  in zip(state, heatmap, self.explored)
         ]
 
         self.debug = heatmap
