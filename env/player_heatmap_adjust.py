@@ -15,11 +15,11 @@ class Player:
         self.heatmap = None
         self.explored = []
         self.step = 0
-        self.alpha = 0.2
+        self.alpha = 0.1
 
     def get_name(self) -> str:
 
-        return "HeatmapFollower_Normalize"
+        return "heatmap_adjust"
 
     def initialize(self, my_number: int, column: int, row: int):
         
@@ -77,13 +77,13 @@ class Player:
         position = self.prev_position_index
 
         if position % self._column != 0:
-            score[0] = heatmap[self.prev_position_index - 1]
+            score[0] = heatmap[self.prev_position_index - 1] * (self.step / self.explored[self.prev_position_index-1] ) 
         if position > self._column:
-            score[1] = heatmap[self.prev_position_index - self._column]
+            score[1] = heatmap[self.prev_position_index - self._column] * (self.step / self.explored[self.prev_position_index-self._column] ) 
         if position % self._column != self._column-1:
-            score[2] = heatmap[self.prev_position_index + 1]
+            score[2] = heatmap[self.prev_position_index + 1] * (self.step / self.explored[self.prev_position_index+1] ) 
         if position < self._column *(self._row -1):
-            score[3] = heatmap[self.prev_position_index + self._column]
+            score[3] = heatmap[self.prev_position_index + self._column] * (self.step / self.explored[self.prev_position_index+self._column] ) 
         
         return score        
     
@@ -130,7 +130,7 @@ class Player:
         heatmap = sum(self.heatmap, [])        
                 
         heatmap = [
-            x+h*(self.step/e/e)  if x != -1 else x  for (x,h,e)  in zip(state, heatmap, self.explored)
+            (x+h)  if x != -1 else x  for (x,h)  in zip(state, heatmap)
         ]
 
         self.debug = heatmap
@@ -183,7 +183,6 @@ class Player:
             None: Updates the heatmap in place.
         """
         coin_x, coin_y = self.index_to_position(coin_index)
-
         n = len(grid)
         m = len(grid[0])
 

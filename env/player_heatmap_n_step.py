@@ -16,7 +16,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "heat_norm"
+        return "heat_norm_step"
 
     def initialize(self, my_number: int, column: int, row: int):
         

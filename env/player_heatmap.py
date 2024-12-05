@@ -1,8 +1,4 @@
 import math
-import random
-
-
-ckpt ={}
 
     
 class Player:
@@ -17,7 +13,7 @@ class Player:
 
     def get_name(self) -> str:
 
-        return "HeatmapFollower_Normalize"
+        return "Elmo"
 
     def initialize(self, my_number: int, column: int, row: int):
         
